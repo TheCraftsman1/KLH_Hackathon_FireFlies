@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurix AI Voice Assistant | Telugu & English Insurance Expert</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="voice-assistant.css">
+</head>
+<body>
+    <!-- Background particle canvas -->
+    <canvas id="bgCanvas"></canvas>
+
+    <!-- Top Bar -->
+    <header class="va-topbar">
+        <a href="index.html" class="va-back"><i class="fas fa-arrow-left"></i></a>
+        <div class="va-brand">
+            <div class="va-logo">I<span>x</span></div>
+            <div>
+                <h1>Insurix AI</h1>
+                <p>Voice Insurance Assistant</p>
+            </div>
+        </div>
+        <div class="va-topbar-right">
+            <div class="va-status" id="statusIndicator">
+                <span class="va-status-dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+            <button class="va-lang-btn" id="langBtn" title="Switch Language">
+                <span id="langLabel">తెలుగు</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="va-main">
+        <!-- Left: Conversation -->
+        <section class="va-conversation" id="conversationPanel">
+            <div class="va-messages" id="messagesContainer">
+                <!-- Welcome message injected by JS -->
+            </div>
+        </section>
+
+        <!-- Center: Voice Orb -->
+        <section class="va-center">
+            <div class="va-orb-wrap" id="orbWrap">
+                <canvas id="waveCanvas" width="320" height="320"></canvas>
+                <div class="va-orb" id="voiceOrb">
+                    <i class="fas fa-microphone" id="orbIcon"></i>
+                </div>
+                <div class="va-orb-label" id="orbLabel">Tap to speak</div>
+            </div>
+
+            <!-- Text input (alternative) -->
+            <div class="va-text-input">
+                <input type="text" id="textInput" placeholder="Type your question..." autocomplete="off">
+                <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </section>
+
+        <!-- Right: Info Cards (shows vehicle/policy details) -->
+        <section class="va-info-panel" id="infoPanel">
+            <div class="va-info-placeholder" id="infoPlaceholder">
+                <i class="fas fa-motorcycle"></i>
+                <h3>Vehicle Details</h3>
+                <p>Ask about any bike or car and details will appear here</p>
+            </div>
+            <!-- Dynamic cards injected by JS -->
+            <div id="infoCards" class="va-info-cards"></div>
+        </section>
+    </main>
+
+    <!-- Quick Suggestions Bar -->
+    <footer class="va-suggestions" id="suggestionsBar">
+        <!-- Chips injected by JS -->
+    </footer>
+
+    <!-- Audio player (hidden) -->
+    <audio id="ttsAudio" preload="none"></audio>
+
+    <script src="chatbot.js"></script>
+    <script src="voice-assistant.js"></script>
+</body>
+</html>

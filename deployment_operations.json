@@ -1,0 +1,48 @@
+[
+  {
+    "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.Resources/deployments/AIFoundryCreate-20260227134712/operations/BA68C2B8F30C6E1D",
+    "operationId": "BA68C2B8F30C6E1D",
+    "properties": {
+      "provisioningOperation": "Create",
+      "provisioningState": "Succeeded",
+      "timestamp": "2026-02-27T08:20:18.3510519Z",
+      "duration": "PT31.5796073S",
+      "trackingId": "40024c3a-1b06-4f54-bcb9-b1404c2333ef",
+      "statusCode": "Created",
+      "targetResource": {
+        "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati/projects/proj-default",
+        "resourceType": "Microsoft.CognitiveServices/accounts/projects",
+        "resourceName": "vishnukanchipati/proj-default"
+      }
+    }
+  },
+  {
+    "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.Resources/deployments/AIFoundryCreate-20260227134712/operations/0E77A2045BA5EFF5",
+    "operationId": "0E77A2045BA5EFF5",
+    "properties": {
+      "provisioningOperation": "Create",
+      "provisioningState": "Succeeded",
+      "timestamp": "2026-02-27T08:20:18.3510519Z",
+      "duration": "PT24.048476S",
+      "trackingId": "35058c9f-9782-4521-8767-cc05d994d9a5",
+      "statusCode": "OK",
+      "targetResource": {
+        "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati",
+        "resourceType": "Microsoft.CognitiveServices/accounts",
+        "resourceName": "vishnukanchipati"
+      }
+    }
+  },
+  {
+    "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.Resources/deployments/AIFoundryCreate-20260227134712/operations/08584294264676033422",
+    "operationId": "08584294264676033422",
+    "properties": {
+      "provisioningOperation": "EvaluateDeploymentOutput",
+      "provisioningState": "Succeeded",
+      "timestamp": "2026-02-27T08:20:18.3510519Z",
+      "duration": "PT31.7827297S",
+      "trackingId": "d4541c5a-7877-4717-81ec-8b7143f2c8d8",
+      "statusCode": "OK"
+    }
+  }
+]

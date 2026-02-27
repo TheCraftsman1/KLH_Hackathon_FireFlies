@@ -1,0 +1,129 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Insurix AI Voice Assistant | Telugu & English Insurance Expert</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="voice-assistant.css">
+</head>
+<body>
+    <canvas id="bgCanvas"></canvas>
+    <div id="toastContainer" class="va-toast-container"></div>
+
+    <!-- Top Bar -->
+    <header class="va-topbar">
+        <a href="index.html" class="va-back"><i class="fas fa-arrow-left"></i></a>
+        <div class="va-brand">
+            <div class="va-logo">I<span>x</span></div>
+            <div>
+                <h1>Insurix AI</h1>
+                <p>Voice Insurance Assistant</p>
+            </div>
+        </div>
+        <div class="va-topbar-right">
+            <div class="va-status" id="statusIndicator">
+                <span class="va-status-dot"></span>
+                <span id="statusText">Ready</span>
+            </div>
+            <button class="va-lang-btn" id="langBtn" title="Switch Language">
+                <span id="langLabel">తెలుగు</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="va-main">
+        <!-- Left: Conversation -->
+        <section class="va-conversation" id="conversationPanel">
+            <div class="va-messages" id="messagesContainer"></div>
+        </section>
+
+        <!-- Center: Voice Orb + Controls -->
+        <section class="va-center">
+            <!-- Live Transcript Display -->
+            <div class="va-live-transcript" id="liveTranscript">
+                <div class="va-transcript-label">
+                    <span class="va-transcript-dot"></span>
+                    <span id="transcriptLabel">Listening...</span>
+                </div>
+                <div class="va-transcript-text" id="transcriptText"></div>
+                <div class="va-vehicle-detect" id="vehicleDetectBanner">
+                    <i class="fas fa-car"></i>
+                    <span>Vehicle detected: </span>
+                    <strong id="detectedNumber"></strong>
+                </div>
+            </div>
+
+            <div class="va-orb-wrap" id="orbWrap">
+                <canvas id="waveCanvas" width="320" height="320"></canvas>
+                <div class="va-orb" id="voiceOrb">
+                    <i class="fas fa-microphone" id="orbIcon"></i>
+                </div>
+                <div class="va-orb-label" id="orbLabel">Tap to speak</div>
+            </div>
+
+            <!-- Quick Vehicle Number Input -->
+            <div class="va-quick-input" id="quickInputSection">
+                <div class="va-number-plate" id="numberPlate">
+                    <div class="va-plate-badge">IND</div>
+                    <input type="text" id="vehicleNumberInput" placeholder="TS 08 JM 2665" maxlength="15" autocomplete="off" spellcheck="false">
+                    <button id="vehicleLookupBtn" title="Look up vehicle">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <p class="va-quick-hint">Or type your vehicle number above</p>
+            </div>
+
+            <!-- Text input -->
+            <div class="va-text-input">
+                <input type="text" id="textInput" placeholder="Type your question..." autocomplete="off">
+                <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+
+            <div class="va-shortcuts">
+                <span><kbd>Space</kbd> Voice</span>
+                <span><kbd>Enter</kbd> Send</span>
+                <span><kbd>Esc</kbd> Stop</span>
+            </div>
+        </section>
+
+        <!-- Right: Info Cards -->
+        <section class="va-info-panel" id="infoPanel">
+            <div class="va-panel-header" id="panelHeader">
+                <button class="va-panel-tab active" data-tab="info"><i class="fas fa-motorcycle"></i> Vehicle</button>
+                <button class="va-panel-tab" data-tab="quotes"><i class="fas fa-scale-balanced"></i> Quotes</button>
+                <button class="va-panel-tab" data-tab="history"><i class="fas fa-clock-rotate-left"></i> History</button>
+            </div>
+
+            <div class="va-info-placeholder" id="infoPlaceholder">
+                <div class="va-placeholder-icon">
+                    <i class="fas fa-motorcycle"></i>
+                    <div class="va-placeholder-ring"></div>
+                </div>
+                <h3>Vehicle Details</h3>
+                <p>Say your vehicle number or type it above</p>
+                <div class="va-placeholder-examples">
+                    <button class="va-example-btn" data-number="TS08JM2665"><i class="fas fa-bolt"></i> Try TS 08 JM 2665</button>
+                    <button class="va-example-btn" data-number="AP09AB1234"><i class="fas fa-bolt"></i> Try AP 09 AB 1234</button>
+                </div>
+            </div>
+            <div id="infoCards" class="va-info-cards"></div>
+        </section>
+    </main>
+
+    <!-- Mobile info panel toggle -->
+    <button class="va-mobile-panel-toggle" id="mobilePanelToggle">
+        <i class="fas fa-motorcycle"></i>
+        <span class="va-toggle-badge" id="toggleBadge" style="display:none;">!</span>
+    </button>
+
+    <!-- Quick Suggestions Bar -->
+    <footer class="va-suggestions" id="suggestionsBar"></footer>
+    <audio id="ttsAudio" preload="none"></audio>
+    <script src="chatbot.js"></script>
+    <script src="voice-assistant.js"></script>
+</body>
+</html>

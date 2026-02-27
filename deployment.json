@@ -1,0 +1,253 @@
+{
+  "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.Resources/deployments/AIFoundryCreate-20260227134712",
+  "name": "AIFoundryCreate-20260227134712",
+  "type": "Microsoft.Resources/deployments",
+  "properties": {
+    "templateHash": "3141831858336305759",
+    "parameters": {
+      "name": {
+        "type": "String",
+        "value": "vishnukanchipati"
+      },
+      "location": {
+        "type": "String",
+        "value": "eastasia"
+      },
+      "tagValues": {
+        "type": "Object",
+        "value": {}
+      },
+      "allowProjectManagement": {
+        "type": "Bool",
+        "value": true
+      },
+      "virtualNetworkType": {
+        "type": "String",
+        "value": "None"
+      },
+      "vnet": {
+        "type": "Object",
+        "value": {}
+      },
+      "ipRules": {
+        "type": "Array",
+        "value": []
+      },
+      "privateEndpoints": {
+        "type": "Array",
+        "value": []
+      },
+      "privateDnsZone": {
+        "type": "String",
+        "value": "privatelink.aiservices.azure.com"
+      },
+      "resourceGroupName": {
+        "type": "String",
+        "value": "Insurance_Agent"
+      },
+      "resourceGroupId": {
+        "type": "String",
+        "value": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent"
+      },
+      "uniqueId": {
+        "type": "String",
+        "value": "60a09f76-cf41-4156-93d5-ddc862b0fc70"
+      },
+      "defaultProjectName": {
+        "type": "String",
+        "value": "proj-default"
+      },
+      "identity": {
+        "type": "Object",
+        "value": {
+          "type": "SystemAssigned"
+        }
+      },
+      "userAssignedIdentityName": {
+        "type": "String",
+        "value": ""
+      },
+      "userIdentityResourceGroupName": {
+        "type": "String",
+        "value": ""
+      },
+      "identityType": {
+        "type": "String",
+        "value": "SystemAssigned"
+      },
+      "encryption_status": {
+        "type": "String",
+        "value": " "
+      },
+      "cmk_keyvault": {
+        "type": "String",
+        "value": ""
+      },
+      "resource_cmk_uri": {
+        "type": "String",
+        "value": ""
+      },
+      "userAssignedIdentityId": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultName": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultLocation": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultResourceGroupName": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVersion": {
+        "type": "String",
+        "value": ""
+      },
+      "keyName": {
+        "type": "String",
+        "value": ""
+      },
+      "hasRoleAssignment": {
+        "type": "Bool",
+        "value": true
+      },
+      "roleDefinitionId": {
+        "type": "String",
+        "value": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/providers/Microsoft.Authorization/roleDefinitions/53ca6127-db72-4b80-b1b0-d745d6d5456d"
+      },
+      "enableRbac": {
+        "type": "Bool",
+        "value": false
+      },
+      "cryptoUserRoleAssignmentName": {
+        "type": "String",
+        "value": "8e7698d3-1ed3-55c0-adca-9fe5525ac5ad"
+      },
+      "skipRbacValidation": {
+        "type": "Bool",
+        "value": false
+      },
+      "applicationInsightsName": {
+        "type": "String",
+        "value": ""
+      },
+      "applicationInsightsResourceId": {
+        "type": "String",
+        "value": ""
+      },
+      "applicationInsightsLocation": {
+        "type": "String",
+        "value": ""
+      },
+      "applicationInsightsStatus": {
+        "type": "String",
+        "value": ""
+      },
+      "gridSelectorData": {
+        "type": "Array",
+        "value": []
+      },
+      "storageAccountName": {
+        "type": "String",
+        "value": ""
+      },
+      "storageAccountResourceId": {
+        "type": "String",
+        "value": ""
+      },
+      "storageAccountLocation": {
+        "type": "String",
+        "value": ""
+      },
+      "storageAccountStatus": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultConnectionName": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultConnectionResourceId": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultConnectionLocation": {
+        "type": "String",
+        "value": ""
+      },
+      "keyVaultConnectionStatus": {
+        "type": "String",
+        "value": ""
+      },
+      "storedCompletionsDisabled": {
+        "type": "Bool",
+        "value": false
+      },
+      "enableAdvancedFeatures": {
+        "type": "Bool",
+        "value": false
+      },
+      "allowDataCollection": {
+        "type": "Bool",
+        "value": true
+      }
+    },
+    "mode": "Incremental",
+    "debugSetting": {
+      "detailLevel": "None"
+    },
+    "provisioningState": "Succeeded",
+    "timestamp": "2026-02-27T08:20:50.3525309Z",
+    "duration": "PT32.4827047S",
+    "correlationId": "5637afb0-8e53-4760-b782-dd68e1722e13",
+    "providers": [
+      {
+        "namespace": "Microsoft.CognitiveServices",
+        "resourceTypes": [
+          {
+            "resourceType": "accounts",
+            "locations": [
+              "eastasia"
+            ]
+          },
+          {
+            "resourceType": "accounts/projects",
+            "locations": [
+              "eastasia"
+            ]
+          }
+        ]
+      }
+    ],
+    "dependencies": [
+      {
+        "dependsOn": [
+          {
+            "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati",
+            "resourceType": "Microsoft.CognitiveServices/accounts",
+            "resourceName": "vishnukanchipati"
+          }
+        ],
+        "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati/projects/proj-default",
+        "resourceType": "Microsoft.CognitiveServices/accounts/projects",
+        "resourceName": "vishnukanchipati/proj-default"
+      }
+    ],
+    "outputResources": [
+      {
+        "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati"
+      },
+      {
+        "id": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati/projects/proj-default"
+      }
+    ],
+    "validationLevel": "Template"
+  },
+  "tags": {
+    "primaryResourceId": "/subscriptions/55931e15-6bf1-4d3c-81d4-ea93fee6ebcd/resourceGroups/Insurance_Agent/providers/Microsoft.CognitiveServices/accounts/vishnukanchipati"
+  }
+}

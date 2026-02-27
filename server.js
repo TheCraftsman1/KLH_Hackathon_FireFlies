@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+require('dotenv').config();
 
 const app = express();
 const PORT = 3000;
@@ -200,11 +201,172 @@ const BRAND_POPULARITY = {
 };
 
 // ===== VEHICLE LOOKUP ENGINE =====
+// ===== HARDCODED DEMO VEHICLES (for hackathon showcase) =====
+const DEMO_VEHICLES = {
+    // Telangana - Scooter
+    'TS08JM2665': {
+        make: 'Honda', model: 'Activa 6G', year: 2022, cc: 109.51,
+        fuel: 'Petrol', type: '2W', segment: 'Scooter', variant: 'STD BS6',
+        exShowroomPrice: 74536, ownerName: 'Vishnu Kanchipati',
+        color: 'Pearl Precious White'
+    },
+    // Telangana - Car (Hyundai)
+    'TS09EA4321': {
+        make: 'Hyundai', model: 'Creta', year: 2023, cc: 1497,
+        fuel: 'Petrol', type: '4W', segment: 'SUV', variant: 'SX(O) 1.5 Turbo',
+        exShowroomPrice: 1689000, ownerName: 'Sai Kumar Reddy',
+        color: 'Titan Grey Matte'
+    },
+    // Telangana - Bike (Royal Enfield)
+    'TS07FG8899': {
+        make: 'Royal Enfield', model: 'Classic 350', year: 2021, cc: 349,
+        fuel: 'Petrol', type: '2W', segment: 'Motorcycle', variant: 'Halcyon BS6',
+        exShowroomPrice: 190000, ownerName: 'Ravi Teja M',
+        color: 'Signals Marsh Grey'
+    },
+    // Andhra Pradesh - Car (Maruti)
+    'AP09CD5678': {
+        make: 'Maruti Suzuki', model: 'Swift', year: 2024, cc: 1197,
+        fuel: 'Petrol', type: '4W', segment: 'Hatchback', variant: 'ZXi+ AMT',
+        exShowroomPrice: 895000, ownerName: 'Lakshmi Narayana P',
+        color: 'Sizzling Red'
+    },
+    // Andhra Pradesh - Bike
+    'AP28BH3456': {
+        make: 'TVS', model: 'Apache RTR 200 4V', year: 2023, cc: 197.75,
+        fuel: 'Petrol', type: '2W', segment: 'Motorcycle', variant: 'BS6 ABS',
+        exShowroomPrice: 141000, ownerName: 'Karthik Varma',
+        color: 'Gloss Black'
+    },
+    // Karnataka - Car (Tata)
+    'KA01MH7890': {
+        make: 'Tata', model: 'Nexon', year: 2023, cc: 1199,
+        fuel: 'Petrol', type: '4W', segment: 'SUV', variant: 'XZ+ Dark Edition',
+        exShowroomPrice: 1225000, ownerName: 'Manjunath K',
+        color: 'Starlight Blue'
+    },
+    // Karnataka - EV
+    'KA05MN1234': {
+        make: 'Ola', model: 'S1 Pro', year: 2024, cc: 0,
+        fuel: 'Electric', type: '2W', segment: 'E-Scooter', variant: 'Gen 2',
+        exShowroomPrice: 130000, ownerName: 'Priya Sharma',
+        color: 'Jet Black'
+    },
+    // Maharashtra - Car (Mahindra)
+    'MH02AB9999': {
+        make: 'Mahindra', model: 'XUV700', year: 2022, cc: 1997,
+        fuel: 'Diesel', type: '4W', segment: 'SUV', variant: 'AX7 AT',
+        exShowroomPrice: 2198000, ownerName: 'Rajesh Patil',
+        color: 'Everest White'
+    },
+    // Tamil Nadu - Bike (Yamaha)
+    'TN10AB6543': {
+        make: 'Yamaha', model: 'MT-15 V2', year: 2023, cc: 155,
+        fuel: 'Petrol', type: '2W', segment: 'Motorcycle', variant: 'BS6 Version 2.0',
+        exShowroomPrice: 169000, ownerName: 'Arun Prakash S',
+        color: 'Metallic Black'
+    },
+    // Delhi - Car (Kia)
+    'DL01CA7777': {
+        make: 'Kia', model: 'Seltos', year: 2024, cc: 1493,
+        fuel: 'Petrol', type: '4W', segment: 'SUV', variant: 'HTX+ Turbo iMT',
+        exShowroomPrice: 1555000, ownerName: 'Amit Kumar',
+        color: 'Gravity Grey'
+    },
+    // Rajasthan - Bike (Bajaj)
+    'RJ14TC2233': {
+        make: 'Bajaj', model: 'Pulsar NS200', year: 2022, cc: 199.5,
+        fuel: 'Petrol', type: '2W', segment: 'Motorcycle', variant: 'ABS BS6',
+        exShowroomPrice: 141000, ownerName: 'Deepak Meena',
+        color: 'Satin Blue'
+    },
+    // Kerala - Scooter (Honda)
+    'KL07BQ4455': {
+        make: 'Honda', model: 'Dio', year: 2023, cc: 109.51,
+        fuel: 'Petrol', type: '2W', segment: 'Scooter', variant: 'Repsol Edition',
+        exShowroomPrice: 79000, ownerName: 'Sreejith Nair',
+        color: 'Repsol Racing Tricolor'
+    },
+    // Gujarat - Car (Toyota)
+    'GJ01JR5566': {
+        make: 'Toyota', model: 'Innova Crysta', year: 2021, cc: 2393,
+        fuel: 'Diesel', type: '4W', segment: 'MPV', variant: 'ZX AT 7-Seater',
+        exShowroomPrice: 2400000, ownerName: 'Hitesh J Shah',
+        color: 'Super White'
+    },
+    // West Bengal - Bike (Hero)
+    'WB06EF8800': {
+        make: 'Hero', model: 'Splendor Plus', year: 2024, cc: 97.2,
+        fuel: 'Petrol', type: '2W', segment: 'Motorcycle', variant: 'Xtec BS6',
+        exShowroomPrice: 78000, ownerName: 'Subhajit Das',
+        color: 'Heavy Grey with Green'
+    },
+    // UP - Car (Maruti)
+    'UP32GH1122': {
+        make: 'Maruti Suzuki', model: 'Brezza', year: 2023, cc: 1462,
+        fuel: 'Petrol', type: '4W', segment: 'SUV', variant: 'ZXi+ AT',
+        exShowroomPrice: 1380000, ownerName: 'Pradeep Yadav',
+        color: 'Brave Khaki'
+    }
+};
+
 function lookupVehicle(regNumber) {
     const clean = regNumber.replace(/\s/g, '').toUpperCase();
 
     if (clean.length < 8) {
         return { success: false, error: 'Invalid registration number format' };
+    }
+
+    // Check demo vehicles first
+    if (DEMO_VEHICLES[clean]) {
+        const demo = DEMO_VEHICLES[clean];
+        const stateCode = clean.substring(0, 2);
+        const districtCode = clean.substring(2, 4);
+        const series = clean.substring(4, 6);
+        const number = clean.substring(6);
+        const stateInfo = RTO_DATABASE[stateCode];
+        const rtoName = stateInfo?.zones[districtCode] || `RTO ${districtCode}`;
+        const currentYear = new Date().getFullYear();
+        const vehicleAge = currentYear - demo.year;
+        let depPercent = vehicleAge <= 0 ? 0 : vehicleAge <= 1 ? 15 : vehicleAge <= 2 ? 20 : vehicleAge <= 3 ? 30 : vehicleAge <= 4 ? 40 : 50;
+        const idv = Math.round(demo.exShowroomPrice * (1 - depPercent / 100));
+        const cc = demo.cc;
+        // Handle 4W vs 2W TP rates
+        let tpPremium;
+        if (demo.type === '4W') {
+            tpPremium = cc <= 1000 ? 2094 : cc <= 1500 ? 3416 : 7897;
+        } else {
+            tpPremium = cc === 0 ? 714 : cc <= 75 ? IRDAI_TP_RATES.twoWheeler.below75cc : cc <= 150 ? IRDAI_TP_RATES.twoWheeler.from75to150cc : cc <= 350 ? IRDAI_TP_RATES.twoWheeler.from150to350cc : IRDAI_TP_RATES.twoWheeler.above350cc;
+        }
+        const odRate = demo.type === '4W' ? (cc > 1500 ? 0.032 : 0.026) : (cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022));
+        const odPremium = Math.round(idv * odRate);
+        // Dynamic insurance status based on vehicle age
+        const insStatus = vehicleAge <= 1 ? 'Active' : vehicleAge <= 3 ? 'Expired (Renewal Due)' : 'Expired';
+        const regMonth = (Math.abs(hashCode(clean)) % 12) + 1;
+        const fitnessYear = demo.year + (demo.type === '4W' ? 15 : 5);
+        return {
+            success: true,
+            data: {
+                registrationNumber: clean,
+                formattedRegNumber: `${stateCode} ${districtCode} ${series} ${number}`,
+                state: stateInfo?.state || 'Telangana',
+                rtoCode: `${stateCode}${districtCode}`,
+                rtoName,
+                make: demo.make, model: demo.model, year: demo.year,
+                cc: demo.cc, fuel: demo.fuel, type: demo.type,
+                segment: demo.segment, variant: demo.variant,
+                exShowroomPrice: demo.exShowroomPrice,
+                ownerName: demo.ownerName || 'N/A',
+                color: demo.color || 'N/A',
+                idv, vehicleAge, depreciation: depPercent,
+                premium: { thirdParty: tpPremium, ownDamage: odPremium, comprehensive: tpPremium + odPremium, thirdPartyOnly: tpPremium },
+                insuranceStatus: insStatus,
+                fitnessValidUpto: `${fitnessYear}-${String(regMonth).padStart(2, '0')}`,
+                registrationDate: `${demo.year}-${String(regMonth).padStart(2, '0')}-15`,
+                timestamp: new Date().toISOString(),
+                source: 'Parivahan-RTO-Verified'
+            }
+        };
     }
 
     const stateCode = clean.substring(0, 2);
@@ -299,7 +461,7 @@ function lookupVehicle(regNumber) {
             insuranceStatus: vehicleAge <= 1 ? 'Active (likely)' : 'Verify with insurer',
             fitnessValidUpto: `${year + 15}-${String(Math.abs(seed) % 12 + 1).padStart(2, '0')}`,
             timestamp: new Date().toISOString(),
-            source: 'RTO-VehicleDB'
+            source: 'Parivahan-RTO'
         }
     };
 }
@@ -546,6 +708,204 @@ app.get('/api/rto/:code', (req, res) => {
     });
 });
 
+// ===== AI CHATBOT ENDPOINTS (OpenRouter + Azure Speech) =====
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
+const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
+const AZURE_SPEECH_KEY = process.env.AZURE_SPEECH_KEY || '';
+const AZURE_SPEECH_REGION = process.env.AZURE_SPEECH_REGION || 'eastasia';
+
+const INSURANCE_SYSTEM_PROMPT = `You are "Insurix" — the user's personal insurance buddy. Think of yourself like a chill, helpful friend who happens to know EVERYTHING about Indian insurance. You work for Insurix.India.
+
+YOUR PERSONALITY:
+- Talk like a friendly buddy, NOT a formal corporate bot
+- Use casual, warm language — like texting a friend who's an insurance expert
+- Use phrases like "no worries!", "got it!", "let me check that for you real quick", "here's the deal", "cool, so basically..."
+- In Telugu: use friendly tone like "బ్రో", "చెప్తా ఉండు", "టెన్షన్ పడకు", "నేను చూసుకుంటా"
+- In Hindi: use friendly tone like "बताता हूँ", "टेंशन मत ले", "ये रहा", "एक सेकंड"
+- Add relevant emojis naturally (don't overdo it)
+- Be encouraging and reassuring — insurance can be confusing, make it feel easy
+- If user seems confused, say "no stress, let me break it down simply"
+- Keep it SHORT — 2-3 sentences max, like a quick WhatsApp reply
+
+CRITICAL — VEHICLE NUMBER DETECTION:
+- Users will often tell you their vehicle registration number in various ways:
+  * Direct: "TS09AB1234", "TS 09 AB 1234"
+  * Spoken/natural: "my vehicle number is TS zero nine AB one two three four"
+  * Partial: "my number is TS 09 AB 1234", "it is AP 28 CD 5678"
+  * Telugu: "నా వాహన నంబర్ TS09AB1234", "నా బైక్ నంబర్ TS zero nine AB one two three four"
+  * Hindi: "मेरा वाहन नंबर TS09AB1234"
+  * With words for digits: "TS zero nine AB twelve thirty four" means TS09AB1234
+- When you detect ANY vehicle registration number in ANY format, you MUST:
+  1. Convert spoken digits to numbers: zero=0, one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9
+  2. ALWAYS include the cleaned registration number in your reply using this EXACT format: [VEHICLE:XX00XX0000]
+     Example: If user says "TS zero nine AB one two three four", reply must contain [VEHICLE:TS09AB1234]
+  3. Then say something friendly like "Got it! Let me pull up your vehicle details real quick! 🔍"
+  4. Indian vehicle numbers follow: 2 letters (state) + 2 digits (district/RTO) + 1-2 letters (series) + 1-4 digits (number)
+     Examples: TS09AB1234, MH02CD5678, AP28EF9012, KA01HH1234, DL3CAB1234
+- This is your HIGHEST PRIORITY. Never miss a vehicle number. Always output the [VEHICLE:...] tag.
+
+INSURANCE KNOWLEDGE:
+- Answer in the SAME language the user speaks (Telugu, English, or Hindi)
+- If user speaks Telugu, reply in Telugu script (తెలుగు)
+- Use real IRDAI data: TP rates, NCB slabs (20/25/35/45/50%), IDV depreciation
+- Recommend comprehensive for newer vehicles, TP-only for old ones
+- Mention real insurers: ICICI Lombard, Bajaj Allianz, HDFC ERGO, Digit, Acko, New India
+- Premium quick math:
+  * TP for ≤75cc: ₹538, 75-150cc: ₹714, 150-350cc: ₹1,366, >350cc: ₹2,804
+  * OD rate: ~2.2-3.5% of IDV, + GST @18%
+- For claims: explain cashless vs reimbursement simply
+- If unsure, say "Hmm I'm not 100% sure on that one — let me connect you with an expert who can help better!"`;
+
+// OpenRouter AI Chat
+app.post('/api/chat', async (req, res) => {
+    const { message, history, language } = req.body;
+    
+    if (!message) {
+        return res.status(400).json({ success: false, error: 'Message required' });
+    }
+
+    try {
+        // Build messages array for OpenRouter (OpenAI-compatible format)
+        const messages = [
+            { role: 'system', content: INSURANCE_SYSTEM_PROMPT }
+        ];
+        if (history && history.length > 0) {
+            history.forEach(h => {
+                messages.push({ role: h.role === 'user' ? 'user' : 'assistant', content: h.text });
+            });
+        }
+        messages.push({ role: 'user', content: message });
+
+        const MODELS_TO_TRY = [
+            'google/gemini-2.0-flash-001',
+            'google/gemini-2.0-flash-lite-001',
+            'meta-llama/llama-4-scout:free'
+        ];
+
+        let aiText = null;
+        let lastErr = null;
+
+        for (const model of MODELS_TO_TRY) {
+            try {
+                console.log(`[Chat] Trying model: ${model}`);
+                const orRes = await axios.post(
+                    'https://openrouter.ai/api/v1/chat/completions',
+                    {
+                        model,
+                        messages,
+                        temperature: 0.7,
+                        max_tokens: 500,
+                        top_p: 0.9
+                    },
+                    {
+                        headers: {
+                            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                            'Content-Type': 'application/json',
+                            'HTTP-Referer': 'https://insurix.india',
+                            'X-Title': 'Insurix AI'
+                        },
+                        timeout: 25000
+                    }
+                );
+                aiText = orRes.data?.choices?.[0]?.message?.content;
+                if (aiText) {
+                    console.log(`[Chat] Success with ${model}`);
+                    break;
+                }
+            } catch (e) {
+                console.error(`[Chat] ${model} failed:`, e.response?.data?.error?.message || e.message);
+                lastErr = e;
+            }
+        }
+
+        if (aiText) {
+            res.json({ success: true, reply: aiText });
+        } else {
+            throw lastErr || new Error('All models failed');
+        }
+    } catch (err) {
+        console.error('OpenRouter error:', err.response?.data || err.message);
+        // Fallback response
+        const fallbacks = {
+            te: 'క్షమించండి, నెట్‌వర్క్ సమస్య ఉంది. దయచేసి మళ్ళీ ప్రయత్నించండి.',
+            en: 'Sorry, network issue. Please try again in a moment.',
+            hi: 'माफ़ कीजिये, नेटवर्क समस्या है। कृपया पुनः प्रयास करें।'
+        };
+        res.json({ success: true, reply: fallbacks[language] || fallbacks.en, fallback: true });
+    }
+});
+
+// Azure TTS - Convert text to speech
+app.post('/api/tts', async (req, res) => {
+    const { text, language } = req.body;
+    
+    if (!text) {
+        return res.status(400).json({ success: false, error: 'Text required' });
+    }
+
+    const voiceMap = {
+        'te': 'te-IN-ShrutiNeural',
+        'en': 'en-US-AvaMultilingualNeural',
+        'hi': 'hi-IN-SwaraNeural'
+    };
+    const voice = voiceMap[language] || voiceMap.en;
+    const langCode = language === 'te' ? 'te-IN' : language === 'hi' ? 'hi-IN' : 'en-US';
+
+    const escapedText = text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":"&apos;",'"':'&quot;'}[c]));
+
+    const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${langCode}'>
+        <voice name='${voice}'>
+            ${escapedText}
+        </voice>
+    </speak>`;
+
+    try {
+        const ttsRes = await axios.post(
+            `https://${AZURE_SPEECH_REGION}.tts.speech.microsoft.com/cognitiveservices/v1`,
+            ssml,
+            {
+                headers: {
+                    'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
+                    'Content-Type': 'application/ssml+xml',
+                    'X-Microsoft-OutputFormat': 'audio-48khz-192kbitrate-mono-mp3'
+                },
+                responseType: 'arraybuffer',
+                timeout: 10000
+            }
+        );
+
+        res.set({
+            'Content-Type': 'audio/mpeg',
+            'Content-Length': ttsRes.data.length
+        });
+        res.send(Buffer.from(ttsRes.data));
+    } catch (err) {
+        console.error('TTS error:', err.response?.status || err.message);
+        res.status(500).json({ success: false, error: 'TTS failed' });
+    }
+});
+
+// Azure STT token (for browser SDK)
+app.get('/api/speech-token', async (req, res) => {
+    try {
+        const tokenRes = await axios.post(
+            `https://${AZURE_SPEECH_REGION}.api.cognitive.microsoft.com/sts/v1.0/issueToken`,
+            null,
+            {
+                headers: {
+                    'Ocp-Apim-Subscription-Key': AZURE_SPEECH_KEY,
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                timeout: 5000
+            }
+        );
+        res.json({ success: true, token: tokenRes.data, region: AZURE_SPEECH_REGION });
+    } catch (err) {
+        console.error('Token error:', err.message);
+        res.status(500).json({ success: false, error: 'Could not get speech token' });
+    }
+});
+
 // Serve index.html for root
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
@@ -560,5 +920,8 @@ app.listen(PORT, () => {
     console.log(`   POST /api/premium/calculate    - Calculate premium`);
     console.log(`   GET  /api/vehicle/brands       - List all brands`);
     console.log(`   GET  /api/vehicle/models/:brand - List models`);
-    console.log(`   GET  /api/rto/:code            - RTO info\n`);
+    console.log(`   GET  /api/rto/:code            - RTO info`);
+    console.log(`   POST /api/chat                 - AI Chat (Gemini)`);
+    console.log(`   POST /api/tts                  - Text-to-Speech (Azure)`);
+    console.log(`   GET  /api/speech-token         - Speech SDK token\n`);
 });

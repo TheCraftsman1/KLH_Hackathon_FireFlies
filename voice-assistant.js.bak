@@ -1,0 +1,1432 @@
+// ===== INSURIX VOICE ASSISTANT - Full Page Logic =====
+(function () {
+    'use strict';
+
+    // ===== CONFIG =====
+    const API_BASE = window.location.origin;
+    let currentLang = 'te'; // 'te' | 'en' | 'hi'
+    let isListening = false;
+    let isSpeaking = false;
+    let isThinking = false;
+    let conversationHistory = [];
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let recognition = null;
+    let silenceTimer = null;
+    let fullTranscript = '';
+    const SILENCE_TIMEOUT = 6000; // ms to wait after last speech before sending (6 sec for natural pauses)
+    let userStoppedManually = false; // track if user clicked stop vs Chrome auto-stopped
+
+    // ===== DOM REFS =====
+    const $ = id => document.getElementById(id);
+    const messagesContainer = $('messagesContainer');
+    const voiceOrb = $('voiceOrb');
+    const orbIcon = $('orbIcon');
+    const orbLabel = $('orbLabel');
+    const orbWrap = $('orbWrap');
+    const waveCanvas = $('waveCanvas');
+    const bgCanvas = $('bgCanvas');
+    const textInput = $('textInput');
+    const sendBtn = $('sendBtn');
+    const langBtn = $('langBtn');
+    const langLabel = $('langLabel');
+    const statusIndicator = $('statusIndicator');
+    const statusText = $('statusText');
+    const suggestionsBar = $('suggestionsBar');
+    const infoPanel = $('infoPanel');
+    const infoPlaceholder = $('infoPlaceholder');
+    const infoCards = $('infoCards');
+    const ttsAudio = $('ttsAudio');
+
+    // ===== LANGUAGE DATA =====
+    const langData = {
+        te: {
+            label: 'తెలుగు',
+            welcome: 'హాయ్! 🙏 నేను మీ insurance buddy Insurix! బైక్, కార్, హెల్త్ ఇన్సూరెన్స్ — ఏది కావాలన్నా నన్ను అడగండి. మీ వాహన నంబర్ చెప్తే చాలు, అంతా నేను చూసుకుంటాను! 😊',
+            placeholder: 'మీ ప్రశ్న టైప్ చేయండి...',
+            tapToSpeak: 'మాట్లాడటానికి నొక్కండి',
+            listening: 'చెప్పండి, వింటున్నాను... 🎤',
+            thinking: 'ఒక్క సెకన్, చూస్తున్నా...',
+            speaking: 'చెబుతున్నాను...',
+            ready: 'సిద్ధం',
+            chips: [
+                'బైక్ ఇన్సూరెన్స్ ధర ఎంత?',
+                'నా వాహనం TS09AB1234',
+                'థర్డ్ పార్టీ vs కాంప్రహెన్సివ్',
+                'క్లెయిమ్ ఎలా చేయాలి?',
+                'NCB అంటే ఏమిటి?',
+                'హెల్త్ ఇన్సూరెన్స్ ప్లాన్స్'
+            ]
+        },
+        en: {
+            label: 'English',
+            welcome: 'Hey there! 👋 I\'m Insurix, your insurance buddy! Need help with bike, car, or health insurance? Just tell me your vehicle number and I\'ll pull up everything for you! 😊',
+            placeholder: 'Type your question...',
+            tapToSpeak: 'Tap to speak',
+            listening: 'Go ahead, I\'m listening... 🎤',
+            thinking: 'Hang on, checking...',
+            speaking: 'Speaking...',
+            ready: 'Ready',
+            chips: [
+                'Two-wheeler insurance price?',
+                'My vehicle is TS09AB1234',
+                'Third party vs comprehensive',
+                'How to file a claim?',
+                'What is NCB?',
+                'Health insurance plans'
+            ]
+        },
+        hi: {
+            label: 'हिन्दी',
+            welcome: 'हेलो दोस्त! 🙏 मैं Insurix हूँ, आपका insurance buddy! बाइक, कार, हेल्थ इंश्योरेंस — कुछ भी पूछो। बस अपना वाहन नंबर बताओ, बाकी मैं देख लूँगा! 😊',
+            placeholder: 'अपना सवाल टाइप करें...',
+            tapToSpeak: 'बोलने के लिए टैप करें',
+            listening: 'बोलो, सुन रहा हूँ... 🎤',
+            thinking: 'एक सेकंड, देख रहा हूँ...',
+            speaking: 'बोल रहा हूँ...',
+            ready: 'तैयार',
+            chips: [
+                'बाइक इंश्योरेंस प्राइस?',
+                'मेरा वाहन TS09AB1234',
+                'थर्ड पार्टी vs कॉम्प्रिहेंसिव',
+                'क्लेम कैसे करें?',
+                'NCB क्या है?',
+                'हेल्थ इंश्योरेंस प्लान'
+            ]
+        }
+    };
+
+    // ===== BACKGROUND PARTICLES =====
+    function initBgCanvas() {
+        const ctx = bgCanvas.getContext('2d');
+        let w, h, particles = [];
+
+        function resize() {
+            w = bgCanvas.width = window.innerWidth;
+            h = bgCanvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        for (let i = 0; i < 60; i++) {
+            particles.push({
+                x: Math.random() * w,
+                y: Math.random() * h,
+                r: Math.random() * 1.5 + 0.5,
+                dx: (Math.random() - 0.5) * 0.3,
+                dy: (Math.random() - 0.5) * 0.3,
+                o: Math.random() * 0.3 + 0.1
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, w, h);
+            particles.forEach(p => {
+                p.x += p.dx;
+                p.y += p.dy;
+                if (p.x < 0) p.x = w;
+                if (p.x > w) p.x = 0;
+                if (p.y < 0) p.y = h;
+                if (p.y > h) p.y = 0;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(59, 130, 246, ${p.o})`;
+                ctx.fill();
+            });
+            requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+    // ===== VOICE WAVEFORM (circular) =====
+    let waveAnimId = null;
+    let waveAmplitude = 0;
+    let targetAmplitude = 0;
+
+    function initWaveCanvas() {
+        const ctx = waveCanvas.getContext('2d');
+        const size = waveCanvas.width;
+        const center = size / 2;
+        const baseRadius = 70;
+
+        function draw() {
+            ctx.clearRect(0, 0, size, size);
+            waveAmplitude += (targetAmplitude - waveAmplitude) * 0.08;
+
+            const now = Date.now() / 1000;
+            const barCount = 64;
+
+            for (let ring = 0; ring < 3; ring++) {
+                const ringRadius = baseRadius + 20 + ring * 18;
+                const alpha = 0.5 - ring * 0.15;
+
+                ctx.beginPath();
+                for (let i = 0; i <= barCount; i++) {
+                    const angle = (i / barCount) * Math.PI * 2;
+                    const noise = Math.sin(angle * 4 + now * 3 + ring) *
+                        Math.cos(angle * 3 - now * 2) *
+                        Math.sin(now * 1.5 + ring * 0.5);
+                    const amp = waveAmplitude * (0.6 + ring * 0.2);
+                    const r = ringRadius + noise * amp;
+                    const x = center + Math.cos(angle) * r;
+                    const y = center + Math.sin(angle) * r;
+
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                }
+                ctx.closePath();
+
+                let color;
+                if (isListening) color = `rgba(239, 68, 68, ${alpha})`;
+                else if (isThinking) color = `rgba(245, 158, 11, ${alpha})`;
+                else if (isSpeaking) color = `rgba(59, 130, 246, ${alpha})`;
+                else color = `rgba(107, 114, 128, ${alpha * 0.3})`;
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+            }
+
+            waveAnimId = requestAnimationFrame(draw);
+        }
+        draw();
+    }
+
+    function setWaveAmplitude(val) {
+        targetAmplitude = val;
+    }
+
+    // ===== STATE MANAGEMENT =====
+    function setState(state) {
+        const ld = langData[currentLang];
+        voiceOrb.className = 'va-orb ' + state;
+        statusIndicator.className = 'va-status ' + state;
+
+        isListening = state === 'listening';
+        isThinking = state === 'thinking';
+        isSpeaking = state === 'speaking';
+
+        switch (state) {
+            case 'listening':
+                orbIcon.className = 'fas fa-microphone';
+                orbLabel.textContent = ld.listening;
+                statusText.textContent = ld.listening;
+                setWaveAmplitude(25);
+                break;
+            case 'thinking':
+                orbIcon.className = 'fas fa-spinner';
+                orbLabel.textContent = ld.thinking;
+                statusText.textContent = ld.thinking;
+                setWaveAmplitude(10);
+                break;
+            case 'speaking':
+                orbIcon.className = 'fas fa-volume-up';
+                orbLabel.textContent = ld.speaking;
+                statusText.textContent = ld.speaking;
+                setWaveAmplitude(30);
+                break;
+            default:
+                orbIcon.className = 'fas fa-microphone';
+                orbLabel.textContent = ld.tapToSpeak;
+                statusText.textContent = ld.ready;
+                setWaveAmplitude(0);
+        }
+    }
+
+    // ===== MESSAGES =====
+    function addMessage(text, type, skipScroll) {
+        const div = document.createElement('div');
+        div.className = `va-msg ${type}`;
+
+        const label = document.createElement('div');
+        label.className = 'va-msg-label';
+        label.textContent = type === 'user' ? 'You' : 'Insurix AI';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'va-msg-bubble';
+        bubble.textContent = text;
+
+        div.appendChild(label);
+        div.appendChild(bubble);
+
+        // Add speak button for bot messages
+        if (type === 'bot') {
+            const actions = document.createElement('div');
+            actions.className = 'msg-actions';
+
+            const speakBtn = document.createElement('button');
+            speakBtn.className = 'msg-action-btn';
+            speakBtn.innerHTML = '<i class="fas fa-volume-up"></i> Play';
+            speakBtn.onclick = () => speakText(text);
+
+            actions.appendChild(speakBtn);
+            div.appendChild(actions);
+        }
+
+        messagesContainer.appendChild(div);
+        if (!skipScroll) {
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        return div;
+    }
+
+    function addTypingIndicator() {
+        const div = document.createElement('div');
+        div.className = 'va-msg bot';
+        div.id = 'typingIndicator';
+
+        const label = document.createElement('div');
+        label.className = 'va-msg-label';
+        label.textContent = 'Insurix AI';
+
+        const typing = document.createElement('div');
+        typing.className = 'va-typing';
+        typing.innerHTML = '<span></span><span></span><span></span>';
+
+        div.appendChild(label);
+        div.appendChild(typing);
+        messagesContainer.appendChild(div);
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const el = $('typingIndicator');
+        if (el) el.remove();
+    }
+
+    // ===== SPOKEN NUMBER CONVERTER =====
+    function convertSpokenNumbers(text) {
+        // Convert spoken digit words to actual digits
+        const wordToDigit = {
+            'zero': '0', 'oh': '0', 'o': '0',
+            'one': '1', 'won': '1',
+            'two': '2', 'to': '2', 'too': '2', 'tu': '2',
+            'three': '3', 'tree': '3', 'tri': '3',
+            'four': '4', 'for': '4', 'fore': '4',
+            'five': '5',
+            'six': '6', 'siks': '6',
+            'seven': '7',
+            'eight': '8', 'ate': '8',
+            'nine': '9', 'nein': '9',
+            // Telugu spoken digits
+            'సున్న': '0', 'ఒకటి': '1', 'రెండు': '2', 'మూడు': '3',
+            'నాలుగు': '4', 'ఐదు': '5', 'ఆరు': '6', 'ఏడు': '7',
+            'ఎనిమిది': '8', 'తొమ్మిది': '9',
+            // Hindi spoken digits
+            'शून्य': '0', 'एक': '1', 'दो': '2', 'तीन': '3',
+            'चार': '4', 'पाँच': '5', 'छह': '6', 'सात': '7',
+            'आठ': '8', 'नौ': '9',
+            // Double digit words
+            'ten': '10', 'eleven': '11', 'twelve': '12', 'thirteen': '13',
+            'fourteen': '14', 'fifteen': '15', 'sixteen': '16', 'seventeen': '17',
+            'eighteen': '18', 'nineteen': '19', 'twenty': '20',
+            'thirty': '30', 'forty': '40', 'fifty': '50',
+            'sixty': '60', 'seventy': '70', 'eighty': '80', 'ninety': '90',
+            'hundred': '00', 'thousand': '000',
+            'double': '', // handled specially
+        };
+
+        let result = text;
+
+        // Handle "double X" patterns (e.g., "double seven" -> "77")
+        result = result.replace(/double\s+(\w+)/gi, (match, word) => {
+            const digit = wordToDigit[word.toLowerCase()];
+            if (digit && digit.length === 1) return digit + digit;
+            return match;
+        });
+
+        // Handle "triple X" patterns
+        result = result.replace(/triple\s+(\w+)/gi, (match, word) => {
+            const digit = wordToDigit[word.toLowerCase()];
+            if (digit && digit.length === 1) return digit + digit + digit;
+            return match;
+        });
+
+        // Replace individual spoken number words with digits
+        for (const [word, digit] of Object.entries(wordToDigit)) {
+            // Word boundary match (case insensitive for English words)
+            const regex = new RegExp(`\\b${word}\\b`, 'gi');
+            result = result.replace(regex, digit);
+        }
+
+        return result;
+    }
+
+    // ===== TELUGU / HINDI LETTER-NAME CONVERTER =====
+    // Speech recognition in Telugu mode converts English letters/codes to Telugu script
+    // e.g. "TS" → "టీఎస్", "JM" → "జెఎమ్", and sometimes merges with adjacent words:
+    //      "బండి TS" → "బండిట్స్"  (sounds like "bandits")
+    function convertIndicLetters(text) {
+        let result = text;
+
+        // --- Phase 1: Split known merged words where state codes got glued ---
+        // "బండిట్స్" = "బండి"(vehicle) + "TS" merged by speech recognition
+        const mergedWords = [
+            [/బండిట్స్/g, 'బండి TS'], [/బండిటీఎస్/g, 'బండి TS'],
+            [/బండి\s*ట్స్/g, 'బండి TS'],
+            [/బైక్ట్స్/g, 'బైక్ TS'], [/స్కూటర్ట్స్/g, 'స్కూటర్ TS'],
+            [/గాడిట్స్/g, 'గాడి TS'], [/గాడీట్స్/g, 'గాడీ TS'],
+            [/కారుట్స్/g, 'కారు TS'], [/కార్ట్స్/g, 'కార్ TS'],
+            // AP merges
+            [/బండిఏపీ/g, 'బండి AP'], [/బైక్ఏపీ/g, 'బైక్ AP'],
+            // "వెహికల్ TS" type merges
+            [/వెహికల్ట్స్/g, 'వెహికల్ TS'],
+            // Hindi merges
+            [/गाड़ीटीएस/g, 'गाड़ी TS'], [/बाइकटीएस/g, 'बाइक TS'],
+        ];
+        for (const [pat, repl] of mergedWords) {
+            result = result.replace(pat, repl);
+        }
+
+        // --- Phase 2: Convert two-letter state code combos (longest match first) ---
+        const stateCombos = [
+            ['టీఎస్', 'TS'], ['టీ ఎస్', 'TS'], ['తీఎస్', 'TS'], ['తీ ఎస్', 'TS'], ['టి ఎస్', 'TS'],
+            ['ఏపీ', 'AP'], ['ఏ పీ', 'AP'], ['ఎపి', 'AP'], ['ఎ పి', 'AP'], ['ఎపీ', 'AP'],
+            ['కేఏ', 'KA'], ['కే ఏ', 'KA'], ['కెఎ', 'KA'], ['కేఎ', 'KA'],
+            ['ఎంహెచ్', 'MH'], ['ఎం హెచ్', 'MH'],
+            ['డీఎల్', 'DL'], ['డీ ఎల్', 'DL'],
+            ['టీఎన్', 'TN'], ['టీ ఎన్', 'TN'],
+            ['కేఎల్', 'KL'], ['కే ఎల్', 'KL'],
+            ['ఆర్జే', 'RJ'], ['ఆర్ జే', 'RJ'],
+            ['యూపీ', 'UP'], ['యూ పీ', 'UP'],
+            ['జీజే', 'GJ'], ['జీ జే', 'GJ'],
+            ['హెచ్ఆర్', 'HR'], ['హెచ్ ఆర్', 'HR'],
+            ['ఎంపీ', 'MP'], ['ఎం పీ', 'MP'],
+            ['సీజీ', 'CG'], ['సీ జీ', 'CG'],
+            ['డబ్ల్యూబి', 'WB'],
+            // Hindi
+            ['टीएस', 'TS'], ['एपी', 'AP'], ['केए', 'KA'], ['एमएच', 'MH'],
+            ['डीएल', 'DL'], ['टीएन', 'TN'], ['केएल', 'KL'], ['आरजे', 'RJ'],
+            ['यूपी', 'UP'], ['जीजे', 'GJ'], ['एचआर', 'HR'], ['एमपी', 'MP'],
+        ];
+        stateCombos.sort((a, b) => b[0].length - a[0].length);
+        for (const [from, to] of stateCombos) {
+            result = result.replace(new RegExp(from, 'g'), ` ${to} `);
+        }
+
+        // --- Phase 3: Convert individual Telugu/Hindi letter names → English ---
+        const letters = [
+            // Multi-char Telugu (longest first)
+            ['ఎక్స్', 'X'], ['డబ్ల్యూ', 'W'], ['క్యూ', 'Q'],
+            ['హెచ్', 'H'], ['జెడ్', 'Z'], ['ఎఫ్', 'F'],
+            ['ఎమ్', 'M'], ['ఎన్', 'N'], ['ఎస్', 'S'], ['ఎల్', 'L'],
+            ['ఆర్', 'R'],
+            // Two-char Telugu
+            ['టీ', 'T'], ['టి', 'T'], ['డీ', 'D'], ['డి', 'D'],
+            ['బీ', 'B'], ['బి', 'B'], ['సీ', 'C'], ['సి', 'C'],
+            ['కే', 'K'], ['కె', 'K'], ['జీ', 'G'], ['జి', 'G'],
+            ['పీ', 'P'], ['పి', 'P'], ['వీ', 'V'], ['వి', 'V'],
+            ['యూ', 'U'], ['యు', 'U'], ['వై', 'Y'],
+            ['జె', 'J'], ['జే', 'J'],
+            ['ఏ', 'A'], ['ఎ', 'A'], ['ఐ', 'I'], ['ఓ', 'O'],
+            // Multi-char Hindi
+            ['एक्स', 'X'], ['डब्ल्यू', 'W'], ['क्यू', 'Q'],
+            ['एच', 'H'], ['जेड', 'Z'], ['एफ', 'F'],
+            ['एम', 'M'], ['एन', 'N'], ['एस', 'S'], ['एल', 'L'],
+            ['आर', 'R'], ['वाई', 'Y'],
+            // Two-char Hindi
+            ['टी', 'T'], ['डी', 'D'], ['बी', 'B'], ['सी', 'C'],
+            ['के', 'K'], ['जी', 'G'], ['पी', 'P'], ['वी', 'V'],
+            ['जे', 'J'], ['ए', 'A'], ['ओ', 'O'], ['आई', 'I'],
+        ];
+        letters.sort((a, b) => b[0].length - a[0].length);
+        for (const [from, to] of letters) {
+            result = result.replace(new RegExp(from, 'g'), to);
+        }
+
+        // --- Phase 4: Handle "ట్స్" suffix pattern anywhere (T+S sound cluster) ---
+        // If any remaining word ends with ట్స్, strip the Telugu and inject TS
+        result = result.replace(/(\S*)ట్స్/g, (match, prefix) => {
+            // If prefix is a known Telugu word, split; otherwise just replace suffix
+            const cleaned = prefix.replace(/[^\u0C00-\u0C7F]/g, ''); // keep only Telugu
+            return cleaned ? cleaned + ' TS' : 'TS';
+        });
+
+        return result;
+    }
+
+    function extractVehicleNumber(text) {
+        // Step 1: Convert spoken numbers to digits
+        let processed = convertSpokenNumbers(text);
+
+        // Step 2: Convert Telugu/Hindi letter names to English
+        processed = convertIndicLetters(processed);
+
+        // Step 3: Remove common filler words between parts of the number
+        processed = processed.replace(/\b(my|vehicle|number|is|its|it's|the|naa|nā|mera|meri|मेरा|నా|వాహన|నంబర్|bike|car|scooter|registration|reg|बाइक|कार|బైక్|కార్|బండి|బండ|గాడి|గాడీ|गाड़ी|కారు|స్కూటర్|వెహికల్)\b/gi, ' ');
+
+        // Step 4: Remove remaining non-English and non-digit characters, normalize
+        const cleaned = processed.replace(/[^A-Za-z0-9]/g, '').toUpperCase();
+
+        // Standard Indian vehicle number: XX00XX0000
+        const match = cleaned.match(/[A-Z]{2}\d{1,2}[A-Z]{1,3}\d{1,4}/);
+        if (match) return match[0];
+
+        // Looser pattern: 2 letters, 2 digits, 1-2 letters, 1-4 digits
+        const looseMatch = cleaned.match(/[A-Z]{2}\d{2}[A-Z]{1,2}\d{1,4}/);
+        if (looseMatch) return looseMatch[0];
+
+        // Fragment assembly: even if there are gaps/junk between parts,
+        // try to find state(2 letters) ... district(1-2 digits) ... series(1-3 letters) ... number(1-4 digits)
+        const fragMatch = cleaned.match(/([A-Z]{2})\D*?(\d{1,2})\D*?([A-Z]{1,3})\D*?(\d{1,4})/);
+        if (fragMatch) {
+            const assembled = fragMatch[1] + fragMatch[2].padStart(2, '0') + fragMatch[3] + fragMatch[4];
+            if (assembled.length >= 8) return assembled;
+        }
+
+        // Last resort: find any digits and letters that could form a number
+        const digits = cleaned.match(/\d+/g) || [];
+        const alphas = cleaned.match(/[A-Z]+/g) || [];
+        if (alphas.length >= 2 && digits.length >= 2) {
+            const candidate = alphas[0] + digits[0].padStart(2, '0') + alphas[1] + digits[1];
+            if (/^[A-Z]{2}\d{2}[A-Z]{1,3}\d{1,4}$/.test(candidate)) return candidate;
+        }
+
+        return null;
+    }
+
+    // ===== LOCAL FALLBACK KNOWLEDGE BASE =====
+    const localKB = {
+        en: {
+            greetings: { patterns: ['hello', 'hi', 'hey', 'namaste', 'good morning', 'good evening', 'howdy', 'sup', 'yo'], response: "Hey there! 👋 I'm Insurix, your insurance buddy! Tell me your vehicle number and I'll pull up all the details — or ask me anything about insurance!" },
+            vehicle: { patterns: ['vehicle', 'bike', 'car', 'scooter', 'motorcycle', 'two wheeler', 'my number', 'registration', 'ts', 'ap', 'mh', 'ka', 'dl', 'tn', 'kl'], response: "Got it! Let me pull up your vehicle details real quick! 🔍" },
+            premium: { patterns: ['premium', 'price', 'cost', 'rate', 'how much', 'expensive', 'cheap', 'affordable'], response: "Premium depends on vehicle age, IDV & CC! IRDAI Third Party rates:\n• ≤75cc: ₹538/yr\n• 75-150cc: ₹714/yr\n• 150-350cc: ₹1,366/yr\n• 350cc+: ₹2,804/yr\n\nNCB can save you up to 50%! 💰" },
+            health: { patterns: ['health', 'medical', 'hospital', 'doctor', 'family health'], response: "Health Insurance starts from ₹500/month! 🏥 Cashless treatment at 7000+ hospitals, coverage from ₹5L to ₹1Cr. Want me to compare plans?" },
+            life: { patterns: ['life', 'term', 'death', 'term plan', 'term insurance'], response: "Term Life Insurance from just ₹490/month! 💝 Get ₹1 Crore coverage with 99.1% claim settlement. That's only ₹25/day for complete family protection!" },
+            claim: { patterns: ['claim', 'accident', 'damage', 'repair', 'cashless', 'file claim'], response: "Filing a claim is easy! 📋\n1️⃣ File FIR (if accident)\n2️⃣ Call insurer helpline\n3️⃣ Submit documents\n4️⃣ Surveyor inspection\n5️⃣ Cashless repair or reimbursement\n\n24/7 claims support available!" },
+            ncb: { patterns: ['ncb', 'no claim bonus', 'bonus', 'discount'], response: "NCB (No Claim Bonus) rewards claim-free years! 🎁\n• 1 yr: 20% off\n• 2 yrs: 25% off\n• 3 yrs: 35% off\n• 4 yrs: 45% off\n• 5+ yrs: 50% off\n\nApplies on OD premium only." },
+            idv: { patterns: ['idv', 'insured declared', 'market value', 'depreciation'], response: "IDV = Current market value of your vehicle 💰\n\nIDV = Ex-Showroom - Depreciation\n• 6 months: 5%\n• 1 yr: 15%\n• 2 yrs: 20%\n• 3 yrs: 30%\n• 4 yrs: 40%\n• 5+ yrs: 50%" },
+            comprehensive: { patterns: ['comprehensive', 'third party', 'tp vs', 'comp vs', 'which policy', 'which insurance', 'difference', 'types'], response: "Great question! 🛡️\n\n• Third Party Only — Covers damage to others, legally required. Cheapest option.\n• Comprehensive — Covers YOUR vehicle + third party. Best protection!\n\nFor newer vehicles, always go Comprehensive. For 5+ year old bikes, TP-only can save money." },
+            thanks: { patterns: ['thanks', 'thank you', 'great', 'awesome', 'nice', 'good', 'perfect', 'cool', 'ok'], response: "You're welcome! 😊 Happy to help with any insurance questions. Feel free to ask anytime!" },
+        },
+        te: {
+            greetings: { patterns: ['హలో', 'హాయ్', 'నమస్కారం', 'నమస్తే', 'హై'], response: "హాయ్! 🙏 నేను Insurix, మీ insurance buddy! మీ వాహన నంబర్ చెప్తే అన్ని details చూపిస్తాను!" },
+            vehicle: { patterns: ['బైక్', 'కార్', 'వాహనం', 'బండి', 'స్కూటర్', 'నంబర్'], response: "అర్థమైంది! మీ వాహన వివరాలు తీసుకుస్తున్నాను! 🔍" },
+            premium: { patterns: ['ధర', 'ప్రీమియం', 'ఎంత', 'రేటు', 'ఖర్చు'], response: "ప్రీమియం వాహనం వయసు, IDV, CC బట్టి మారుతుంది! IRDAI TP రేట్లు:\n• ≤75cc: ₹538\n• 75-150cc: ₹714\n• 150-350cc: ₹1,366\n• 350cc+: ₹2,804\n\nNCB తో 50% వరకు తగ్గింపు! 💰" },
+            thanks: { patterns: ['ధన్యవాదం', 'థ్యాంక్స్', 'బాగుంది', 'సూపర్'], response: "ధన్యవాదాలు! 😊 ఇంకా ఏదైనా అడగండి!" },
+        },
+        hi: {
+            greetings: { patterns: ['हेलो', 'हाय', 'नमस्ते', 'हैलो'], response: "हेलो! 🙏 मैं Insurix हूँ, आपका insurance buddy! गाड़ी नंबर बताओ, सब details दिखाता हूँ!" },
+            vehicle: { patterns: ['बाइक', 'कार', 'वाहन', 'गाड़ी', 'स्कूटर', 'नंबर'], response: "समझ गया! आपकी गाड़ी की details लाता हूँ! 🔍" },
+            thanks: { patterns: ['धन्यवाद', 'शुक्रिया', 'अच्छा', 'बढ़िया'], response: "शुक्रिया! 😊 और कुछ पूछना हो तो बताइए!" },
+        }
+    };
+
+    function getLocalReply(userText) {
+        const text = userText.toLowerCase();
+        const kb = localKB[currentLang] || localKB.en;
+        const fallbackKB = localKB.en; // always check English as fallback
+
+        // Check current language KB first, then English
+        for (const kbToCheck of [kb, fallbackKB]) {
+            for (const [, data] of Object.entries(kbToCheck)) {
+                for (const pattern of data.patterns) {
+                    if (text.includes(pattern.toLowerCase())) {
+                        return data.response;
+                    }
+                }
+            }
+        }
+
+        // Also try InsurixChatbot if loaded
+        if (window.InsurixChatbot) {
+            try {
+                window.InsurixChatbot.currentLang = currentLang;
+                return window.InsurixChatbot.processMessage(userText);
+            } catch (e) { /* ignore */ }
+        }
+
+        // Ultimate fallback
+        return currentLang === 'te'
+            ? 'మీ ప్రశ్నకు సమాధానం ఇస్తాను! బీమా గురించి అడగండి — బైక్, హెల్త్, లైఫ్ ఇన్సూరెన్స్ ఏదైనా సరే! 🤔'
+            : currentLang === 'hi'
+            ? 'कोई बात नहीं! बीमा के बारे में कुछ भी पूछो — बाइक, हेल्थ, लाइफ इंश्योरेंस! 🤔'
+            : "No worries! Ask me about insurance — bike, health, life, claims, NCB, or just tell me your vehicle number! 🤔";
+    }
+
+    // ===== AI CHAT =====
+    async function sendToAI(userText) {
+        setState('thinking');
+        addTypingIndicator();
+
+        // Use enhanced vehicle number extraction (handles spoken numbers)
+        const regMatch = extractVehicleNumber(userText);
+        if (regMatch) {
+            lookupAndShowVehicle(regMatch);
+        }
+
+        // Add to history
+        conversationHistory.push({ role: 'user', text: userText });
+        // Keep last 20 messages
+        if (conversationHistory.length > 20) conversationHistory = conversationHistory.slice(-20);
+
+        // --- Try AI API first, then fall back to local ---
+        let reply = null;
+        let usedFallback = false;
+
+        try {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 12000); // 12s max
+
+            const res = await fetch(`${API_BASE}/api/chat`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: userText,
+                    history: conversationHistory.slice(0, -1),
+                    language: currentLang
+                }),
+                signal: controller.signal
+            });
+            clearTimeout(timeout);
+
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+            const data = await res.json();
+            if (data.success && data.reply && !data.fallback) {
+                reply = data.reply;
+            } else {
+                throw new Error('API returned fallback or empty');
+            }
+        } catch (err) {
+            console.warn('AI API unavailable, using local fallback:', err.message);
+            usedFallback = true;
+
+            // If vehicle number detected, give a smart vehicle-aware response
+            if (regMatch) {
+                reply = currentLang === 'te'
+                    ? `అర్థమైంది! 🔍 మీ వాహనం ${regMatch} వివరాలు తీసుకుస్తున్నాను. ఒక్క సెకన్...\n\nమీ బైక్ details మరియు best insurance quotes కుడి వైపు చూడండి! 👉 "Buy Now" బటన్ క్లిక్ చేసి మీ పాలసీ కొనుగోలు చేయండి!`
+                    : currentLang === 'hi'
+                    ? `समझ गया! 🔍 आपकी गाड़ी ${regMatch} की details ला रहा हूँ...\n\nदाईं तरफ अपनी बाइक details और best insurance quotes देखें! 👉 "Buy Now" बटन दबाकर पॉलिसी खरीदें!`
+                    : `Got it! 🔍 I found your vehicle ${regMatch}!\n\nCheck the right panel for your bike details, insurance quotes from 6 top insurers, and the best-value recommendation. 👉 Click "Buy Now" to purchase your policy instantly!`;
+            } else {
+                reply = getLocalReply(userText);
+            }
+        }
+
+        removeTypingIndicator();
+
+        if (reply) {
+            conversationHistory.push({ role: 'assistant', text: reply });
+
+            // Clean [VEHICLE:...] tags from displayed message
+            const displayReply = reply.replace(/\[VEHICLE:[A-Z0-9]+\]/g, '').trim();
+            addMessage(displayReply, 'bot');
+
+            // Check if AI response contains a [VEHICLE:XX00XX0000] tag and trigger lookup
+            if (!usedFallback) {
+                const aiVehicleMatch = reply.match(/\[VEHICLE:([A-Z0-9]+)\]/);
+                if (aiVehicleMatch && !regMatch) {
+                    lookupAndShowVehicle(aiVehicleMatch[1]);
+                }
+                if (!regMatch && !aiVehicleMatch) {
+                    detectAndShowVehicleInfo(userText, reply);
+                }
+            }
+
+            // Auto-speak the cleaned reply
+            speakText(displayReply);
+        } else {
+            addMessage('Something went wrong. Please try again!', 'bot');
+            setState('idle');
+        }
+    }
+
+    // ===== AUDIO AMPLIFIER (Web Audio API) =====
+    let audioCtx = null;
+    let gainNode = null;
+    function ensureAudioBoost() {
+        if (gainNode) return; // already set up
+        try {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const source = audioCtx.createMediaElementSource(ttsAudio);
+            gainNode = audioCtx.createGain();
+            gainNode.gain.value = 3.0; // 3x amplification
+            source.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+        } catch (e) {
+            console.warn('Audio boost setup failed:', e);
+        }
+    }
+
+    // ===== AZURE TTS =====
+    async function speakText(text) {
+        if (!text) return;
+        stopSpeaking();
+
+        setState('speaking');
+
+        try {
+            const res = await fetch(`${API_BASE}/api/tts`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text: cleanTextForTTS(text), language: currentLang })
+            });
+
+            if (!res.ok) throw new Error('TTS failed');
+
+            const blob = await res.blob();
+            const url = URL.createObjectURL(blob);
+
+            // Max out HTML audio volume + set up Web Audio amplifier
+            ttsAudio.volume = 1.0;
+            ensureAudioBoost();
+            if (audioCtx && audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            ttsAudio.src = url;
+            ttsAudio.play();
+
+            // Animate wave while speaking
+            let speakInterval = setInterval(() => {
+                if (!ttsAudio.paused) {
+                    setWaveAmplitude(15 + Math.random() * 25);
+                }
+            }, 100);
+
+            ttsAudio.onended = () => {
+                clearInterval(speakInterval);
+                URL.revokeObjectURL(url);
+                setState('idle');
+            };
+
+            ttsAudio.onerror = () => {
+                clearInterval(speakInterval);
+                URL.revokeObjectURL(url);
+                setState('idle');
+            };
+
+        } catch (err) {
+            console.error('TTS error:', err);
+            setState('idle');
+        }
+    }
+
+    function stopSpeaking() {
+        ttsAudio.pause();
+        ttsAudio.currentTime = 0;
+        isSpeaking = false;
+    }
+
+    function cleanTextForTTS(text) {
+        return text
+            .replace(/[*#_~`]/g, '')
+            .replace(/\[.*?\]\(.*?\)/g, '')
+            .replace(/https?:\/\/\S+/g, '')
+            .replace(/\n{2,}/g, '. ')
+            .trim();
+    }
+
+    // ===== SPEECH-TO-TEXT (Web Speech API + Azure fallback) =====
+    function initSpeechRecognition() {
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            console.warn('Web Speech API not supported, using text input only');
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+
+        recognition.onstart = () => {
+            fullTranscript = '';
+            userStoppedManually = false;
+            setState('listening');
+        };
+
+        recognition.onresult = (event) => {
+            // Reset silence timer on every new result
+            clearTimeout(silenceTimer);
+
+            // Pulse the wave higher when actively hearing words
+            setWaveAmplitude(35);
+
+            let interim = '';
+            let finalPart = '';
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                const t = event.results[i][0].transcript;
+                if (event.results[i].isFinal) {
+                    finalPart += t;
+                } else {
+                    interim += t;
+                }
+            }
+
+            if (finalPart) {
+                fullTranscript += finalPart;
+            }
+
+            // Show accumulated + interim text in input
+            textInput.value = (fullTranscript + interim).trim();
+
+            // Start silence timer — sends after SILENCE_TIMEOUT ms of no new speech
+            silenceTimer = setTimeout(() => {
+                const text = fullTranscript.trim() || textInput.value.trim();
+                if (text) {
+                    userStoppedManually = true; // prevent auto-restart in onend
+                    recognition.stop();
+                    textInput.value = '';
+                    fullTranscript = '';
+                    addMessage(text, 'user');
+                    sendToAI(text);
+                }
+            }, SILENCE_TIMEOUT);
+
+            // After 3.5 seconds of silence, lower wave to hint "wrapping up soon"
+            setTimeout(() => {
+                if (isListening) setWaveAmplitude(12);
+            }, 3500);
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech error:', event.error);
+            clearTimeout(silenceTimer);
+            fullTranscript = '';
+            if (event.error === 'not-allowed') {
+                addMessage(currentLang === 'te'
+                    ? 'మైక్రోఫోన్ అనుమతి నిరాకరించబడింది. దయచేసి బ్రౌజర్ సెట్టింగ్స్‌లో అనుమతించండి.'
+                    : 'Microphone permission denied. Please allow in browser settings.',
+                    'bot'
+                );
+            }
+            setState('idle');
+        };
+
+        recognition.onend = () => {
+            // Chrome auto-stops continuous recognition after silence.
+            // If user didn't manually stop AND we're still in listening mode,
+            // restart recognition to keep listening.
+            if (!userStoppedManually && isListening) {
+                try {
+                    const langMap = { te: 'te-IN', en: 'en-IN', hi: 'hi-IN' };
+                    recognition.lang = langMap[currentLang] || 'en-IN';
+                    recognition.start();
+                    console.log('[Speech] Auto-restarting recognition (Chrome auto-stopped)');
+                    return; // Don't clear timers or send — keep waiting
+                } catch (e) {
+                    console.warn('[Speech] Could not restart:', e);
+                }
+            }
+
+            // User stopped manually or restart failed — finalize
+            clearTimeout(silenceTimer);
+            if (fullTranscript.trim()) {
+                const text = fullTranscript.trim();
+                fullTranscript = '';
+                textInput.value = '';
+                addMessage(text, 'user');
+                sendToAI(text);
+            } else {
+                setState('idle');
+            }
+        };
+    }
+
+    function toggleListening() {
+        // If AI is speaking, stop it immediately and start listening
+        if (isSpeaking) {
+            stopSpeaking();
+        }
+
+        if (isThinking) {
+            // Don't interrupt thinking/API call
+            return;
+        }
+
+        if (isListening) {
+            clearTimeout(silenceTimer);
+            userStoppedManually = true;
+            fullTranscript = '';
+            recognition?.stop();
+            setState('idle');
+            return;
+        }
+
+        if (!recognition) {
+            addMessage(currentLang === 'te'
+                ? 'మీ బ్రౌజర్‌లో వాయిస్ సపోర్ట్ లేదు. దయచేసి టైప్ చేయండి.'
+                : 'Voice not supported in your browser. Please type instead.',
+                'bot'
+            );
+            return;
+        }
+
+        // Set language
+        const langMap = { te: 'te-IN', en: 'en-IN', hi: 'hi-IN' };
+        recognition.lang = langMap[currentLang] || 'en-IN';
+
+        try {
+            recognition.start();
+        } catch (e) {
+            console.error('Recognition start error:', e);
+        }
+    }
+
+    // ===== VEHICLE INFO DETECTION =====
+    function detectAndShowVehicleInfo(userText, botReply) {
+        // Use enhanced vehicle number extraction from user text
+        const regNum = extractVehicleNumber(userText);
+        if (regNum) {
+            lookupAndShowVehicle(regNum);
+            return;
+        }
+
+        // Also check bot reply for [VEHICLE:...] tag (already handled in sendToAI but as fallback)
+        const aiTag = botReply.match(/\[VEHICLE:([A-Z0-9]+)\]/);
+        if (aiTag) {
+            lookupAndShowVehicle(aiTag[1]);
+            return;
+        }
+
+        // Check if bot reply mentions specific vehicle details
+        const priceMatch = botReply.match(/₹[\d,]+/g);
+        const brandMatch = botReply.match(/(Honda|Hero|TVS|Bajaj|Royal Enfield|Yamaha|Suzuki|KTM|Ola|Ather)/i);
+        const modelMatch = botReply.match(/(Activa|Splendor|Jupiter|Pulsar|Classic|Apache|Access|Duke|S1|450X|Bullet|Glamour|Shine|CB Shine|Dio|FZ|R15|MT-15|Ntorq|Raider|Himalayan|Hunter|Continental)/i);
+
+        if (brandMatch || priceMatch) {
+            showPremiumCard(botReply, brandMatch?.[0], modelMatch?.[0], priceMatch);
+        }
+    }
+
+    async function lookupAndShowVehicle(regNum) {
+        try {
+            const res = await fetch(`${API_BASE}/api/vehicle/lookup`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ registrationNumber: regNum })
+            });
+            const data = await res.json();
+            if (data.success) {
+                showVehicleCard(data.data);
+
+                // Check policy status — if expired or "Verify", auto-show best quotes + payment
+                const status = (data.data.insuranceStatus || '').toLowerCase();
+                const isExpired = status.includes('verify') || status.includes('expired') || status.includes('lapsed') || !status.includes('active');
+
+                if (data.data.quotes && data.data.quotes.length > 0) {
+                    showQuotesCard(data.data.quotes, isExpired, data.data);
+                }
+            }
+        } catch (err) {
+            console.error('Vehicle lookup error:', err);
+        }
+    }
+
+    function showVehicleCard(vehicle) {
+        infoPlaceholder.style.display = 'none';
+        const fuelClass = vehicle.fuel?.toLowerCase() === 'electric' ? 'electric' : vehicle.fuel?.toLowerCase() === 'diesel' ? 'diesel' : 'petrol';
+
+        // Determine insurance status styling
+        const status = (vehicle.insuranceStatus || '').toLowerCase();
+        const isActive = status.includes('active');
+        const statusClass = isActive ? 'status-active' : 'status-expired';
+        const statusLabel = isActive ? '✅ Active' : '⚠️ Expired / Needs Renewal';
+
+        const card = document.createElement('div');
+        card.className = 'va-card';
+        card.innerHTML = `
+            <div class="va-card-header">
+                <div class="va-card-icon bike"><i class="fas fa-motorcycle"></i></div>
+                <div>
+                    <div class="va-card-title">${vehicle.make} ${vehicle.model}</div>
+                    <div class="va-card-subtitle">${vehicle.formattedRegNumber || vehicle.registrationNumber}</div>
+                </div>
+            </div>
+            <div class="va-card-rows">
+                <div class="va-card-row">
+                    <span class="label">Year</span>
+                    <span class="value">${vehicle.year}</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">Engine</span>
+                    <span class="value">${vehicle.cc}cc <span class="va-card-badge ${fuelClass}">${vehicle.fuel || 'Petrol'}</span></span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">Segment</span>
+                    <span class="value">${vehicle.segment || 'N/A'}</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">IDV</span>
+                    <span class="value highlight">₹${(vehicle.idv || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">Owner</span>
+                    <span class="value">${vehicle.ownerName || 'N/A'}</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">RTO</span>
+                    <span class="value">${vehicle.rtoName || vehicle.rto || 'N/A'}</span>
+                </div>
+                <div class="va-card-row" style="margin-top:8px; padding-top:8px; border-top:1px solid var(--va-border);">
+                    <span class="label">Insurance Status</span>
+                    <span class="value ${statusClass}" style="font-size:13px;">${statusLabel}</span>
+                </div>
+                ${vehicle.premium ? `
+                <div class="va-card-row">
+                    <span class="label">TP Premium</span>
+                    <span class="value premium">₹${vehicle.premium.thirdParty?.toLocaleString('en-IN')}/yr</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">OD Premium</span>
+                    <span class="value premium">₹${vehicle.premium.ownDamage?.toLocaleString('en-IN')}/yr</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">Comprehensive</span>
+                    <span class="value" style="color:var(--va-blue); font-size:15px; font-weight:800;">₹${vehicle.premium.comprehensive?.toLocaleString('en-IN')}/yr</span>
+                </div>
+                ` : ''}
+            </div>
+        `;
+        infoCards.prepend(card);
+    }
+
+    function showQuotesCard(quotes, isExpired, vehicleData) {
+        infoPlaceholder.style.display = 'none';
+
+        // Sort quotes: best value = best combo of price + claim ratio + garages
+        const scored = quotes.map(q => {
+            const price = q.premium?.comprehensive?.total || 0;
+            const claim = q.claimSettlementRatio || 90;
+            const garages = q.networkGarages || 3000;
+            const rating = q.rating || 3.5;
+            // Score: lower price is better, higher claim/garages/rating is better
+            const score = (claim * 2) + (rating * 10) + (garages / 500) - (price / 200);
+            return { ...q, _score: score, _price: price };
+        }).sort((a, b) => b._score - a._score);
+
+        const bestQuote = scored[0];
+
+        // ===== BEST VALUE RECOMMENDATION CARD =====
+        if (bestQuote) {
+            const bestCard = document.createElement('div');
+            bestCard.className = 'va-card';
+            bestCard.style.border = '1.5px solid var(--va-green)';
+            bestCard.style.boxShadow = '0 0 20px rgba(16, 185, 129, 0.15)';
+            bestCard.innerHTML = `
+                <div style="background: linear-gradient(135deg, rgba(16,185,129,0.15), rgba(59,130,246,0.1)); border-radius: 12px 12px 0 0; padding: 10px 16px; margin: -16px -16px 12px -16px; display: flex; align-items: center; gap: 8px;">
+                    <span style="background: var(--va-green); color: #000; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px;">⭐ Best Value</span>
+                    <span style="font-size: 11px; color: var(--va-green);">${isExpired ? 'Recommended for your expired policy' : 'Our top pick for you'}</span>
+                </div>
+                <div class="va-card-header" style="padding-top:0;">
+                    <div class="va-card-icon" style="background: rgba(16,185,129,0.15); color: var(--va-green);"><i class="fas fa-trophy"></i></div>
+                    <div style="flex:1;">
+                        <div class="va-card-title">${bestQuote.insurerName}</div>
+                        <div class="va-card-subtitle">${bestQuote.claimSettlementRatio}% claim settlement · ${(bestQuote.networkGarages / 1000).toFixed(1)}K+ garages · ⭐ ${bestQuote.rating}/5</div>
+                    </div>
+                </div>
+                <div class="va-card-rows">
+                    <div class="va-card-row">
+                        <span class="label">Comprehensive Premium</span>
+                        <span class="value" style="color: var(--va-green); font-size: 20px; font-weight: 800;">₹${bestQuote.premium?.comprehensive?.total?.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="va-card-row">
+                        <span class="label" style="font-size:11px;">Own Damage: ₹${bestQuote.premium?.comprehensive?.ownDamage?.toLocaleString('en-IN')} · TP: ₹${bestQuote.premium?.comprehensive?.thirdParty?.toLocaleString('en-IN')} · GST: ₹${bestQuote.premium?.comprehensive?.gst?.toLocaleString('en-IN')}</span>
+                    </div>
+                    <div class="va-card-row">
+                        <span class="label">Third Party Only</span>
+                        <span class="value premium">₹${bestQuote.premium?.thirdPartyOnly?.total?.toLocaleString('en-IN')}</span>
+                    </div>
+                    ${bestQuote.discount ? `
+                    <div class="va-card-row">
+                        <span class="label">Discount</span>
+                        <span class="value" style="color: var(--va-green);">${bestQuote.discount}% off OD</span>
+                    </div>` : ''}
+                    <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:8px;">
+                        ${(bestQuote.features || []).map(f => `<span style="background: rgba(59,130,246,0.1); color: var(--va-blue); padding: 3px 10px; border-radius: 12px; font-size: 10px; font-weight: 600;">✓ ${f}</span>`).join('')}
+                    </div>
+                    ${bestQuote.addOns?.length ? `
+                    <div style="margin-top:10px; padding-top:10px; border-top:1px solid var(--va-border);">
+                        <div style="font-size:11px; color:var(--va-muted); margin-bottom:6px; font-weight:600;">Optional Add-ons:</div>
+                        ${bestQuote.addOns.map(a => `
+                            <div class="va-card-row" style="font-size:11px;">
+                                <span class="label">${a.name}</span>
+                                <span class="value" style="font-size:11px;">+₹${a.price?.toLocaleString('en-IN')}</span>
+                            </div>
+                        `).join('')}
+                    </div>` : ''}
+                </div>
+                <button class="va-buy-btn" data-insurer="${bestQuote.insurerId}" data-amount="${bestQuote._price}" style="
+                    width: 100%; margin-top: 14px; padding: 14px; border: none; border-radius: 12px;
+                    background: linear-gradient(135deg, #10B981, #059669); color: white;
+                    font-size: 15px; font-weight: 700; cursor: pointer;
+                    display: flex; align-items: center; justify-content: center; gap: 8px;
+                    transition: all 0.2s; font-family: var(--font);
+                ">
+                    <i class="fas fa-bolt"></i> Buy Now — ₹${bestQuote._price?.toLocaleString('en-IN')}
+                </button>
+            `;
+            bestCard.querySelector('.va-buy-btn').addEventListener('click', () => {
+                showPaymentOptions(bestQuote, vehicleData);
+            });
+            infoCards.prepend(bestCard);
+        }
+
+        // ===== ALL QUOTES COMPARISON CARD =====
+        const allCard = document.createElement('div');
+        allCard.className = 'va-card';
+        allCard.innerHTML = `
+            <div class="va-card-header">
+                <div class="va-card-icon quote"><i class="fas fa-scale-balanced"></i></div>
+                <div>
+                    <div class="va-card-title">Compare ${scored.length} Insurers</div>
+                    <div class="va-card-subtitle">${isExpired ? '⚠️ Policy expired — renew now!' : 'Sorted by best value'}</div>
+                </div>
+            </div>
+            <div class="va-card-rows" style="gap:10px;">
+                ${scored.map((q, i) => {
+                    const isBest = i === 0;
+                    const price = q.premium?.comprehensive?.total || 0;
+                    const tpPrice = q.premium?.thirdPartyOnly?.total || 0;
+                    return `
+                    <div class="va-quote-card" style="${isBest ? 'border-color: var(--va-green); background: rgba(16,185,129,0.05);' : ''}" data-idx="${i}">
+                        <div class="va-quote-logo" style="${isBest ? 'background: rgba(16,185,129,0.2); color: var(--va-green);' : ''}">${q.insurerName?.split(' ').map(w => w[0]).join('').substring(0, 2) || 'IN'}</div>
+                        <div class="va-quote-info" style="flex:1;">
+                            <div class="va-quote-name" style="display:flex; align-items:center; gap:6px;">
+                                ${q.insurerName}
+                                ${isBest ? '<span style="background:var(--va-green);color:#000;font-size:8px;font-weight:800;padding:2px 6px;border-radius:10px;">BEST</span>' : ''}
+                            </div>
+                            <div class="va-quote-claim">${q.claimSettlementRatio}% claims · ${(q.networkGarages / 1000).toFixed(1)}K garages · ⭐${q.rating}</div>
+                            <div style="font-size:10px; color:var(--va-muted); margin-top:2px;">TP: ₹${tpPrice.toLocaleString('en-IN')} ${q.discount ? `· ${q.discount}% off` : ''}</div>
+                        </div>
+                        <div style="text-align:right;">
+                            <div class="va-quote-price" style="${isBest ? 'color:var(--va-green);' : ''}">₹${price.toLocaleString('en-IN')}</div>
+                            <button class="va-select-btn" data-idx="${i}" style="
+                                margin-top:6px; padding:5px 14px; border:1px solid ${isBest ? 'var(--va-green)' : 'var(--va-blue)'};
+                                background: ${isBest ? 'rgba(16,185,129,0.15)' : 'rgba(59,130,246,0.1)'};
+                                color: ${isBest ? 'var(--va-green)' : 'var(--va-blue)'};
+                                border-radius:8px; font-size:11px; font-weight:700; cursor:pointer;
+                                font-family:var(--font); transition:all 0.2s;
+                            ">${isBest ? '✓ Best Pick' : 'Select'}</button>
+                        </div>
+                    </div>`;
+                }).join('')}
+            </div>
+        `;
+
+        // Add click handlers for select buttons
+        allCard.querySelectorAll('.va-select-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.target.dataset.idx);
+                showPaymentOptions(scored[idx], vehicleData);
+            });
+        });
+
+        infoCards.prepend(allCard);
+    }
+
+    // ===== PAYMENT OPTIONS =====
+    function showPaymentOptions(quote, vehicleData) {
+        infoPlaceholder.style.display = 'none';
+        const amount = quote.premium?.comprehensive?.total || quote._price || 0;
+        const tpAmount = quote.premium?.thirdPartyOnly?.total || 0;
+
+        // Remove any existing payment card
+        const existing = document.getElementById('paymentCard');
+        if (existing) existing.remove();
+
+        const card = document.createElement('div');
+        card.className = 'va-card';
+        card.id = 'paymentCard';
+        card.style.border = '1.5px solid var(--va-blue)';
+        card.style.boxShadow = '0 0 20px rgba(59, 130, 246, 0.15)';
+        card.innerHTML = `
+            <div style="background: linear-gradient(135deg, rgba(59,130,246,0.15), rgba(139,92,246,0.1)); border-radius: 12px 12px 0 0; padding: 10px 16px; margin: -16px -16px 12px -16px; display: flex; align-items: center; gap: 8px;">
+                <span style="background: var(--va-blue); color: #fff; font-size: 10px; font-weight: 800; padding: 3px 10px; border-radius: 20px;">🔒 Secure Checkout</span>
+                <span style="font-size: 11px; color: var(--va-blue);">${quote.insurerName}</span>
+            </div>
+            <div class="va-card-header" style="padding-top:0;">
+                <div class="va-card-icon" style="background:rgba(59,130,246,0.15); color:var(--va-blue);"><i class="fas fa-credit-card"></i></div>
+                <div>
+                    <div class="va-card-title">Choose Payment Method</div>
+                    <div class="va-card-subtitle">${vehicleData?.make || ''} ${vehicleData?.model || ''} · ${vehicleData?.formattedRegNumber || vehicleData?.registrationNumber || ''}</div>
+                </div>
+            </div>
+
+            <div style="background: var(--va-surface); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+                <div class="va-card-row" style="margin-bottom:4px;">
+                    <span class="label">Plan</span>
+                    <span class="value" style="font-weight:700;">Comprehensive</span>
+                </div>
+                <div class="va-card-row">
+                    <span class="label">Total Amount</span>
+                    <span class="value" style="color:var(--va-green); font-size:18px; font-weight:800;">₹${amount.toLocaleString('en-IN')}</span>
+                </div>
+                <div style="font-size:10px; color:var(--va-muted); text-align:right; margin-top:2px;">incl. 18% GST</div>
+            </div>
+
+            <div class="va-card-rows" style="gap:8px;">
+                <div class="va-payment-option" data-method="upi" style="
+                    background: var(--va-surface); border: 1.5px solid var(--va-border); border-radius: 12px;
+                    padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s;
+                ">
+                    <div style="width:42px; height:42px; background: rgba(16,185,129,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-mobile-screen" style="color:var(--va-green); font-size:18px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">UPI Payment</div>
+                        <div style="font-size:10px; color:var(--va-muted);">GPay, PhonePe, Paytm, BHIM</div>
+                    </div>
+                    <div style="font-size:10px; background:rgba(16,185,129,0.15); color:var(--va-green); padding:3px 8px; border-radius:8px; font-weight:700;">Instant</div>
+                </div>
+
+                <div class="va-payment-option" data-method="card" style="
+                    background: var(--va-surface); border: 1.5px solid var(--va-border); border-radius: 12px;
+                    padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s;
+                ">
+                    <div style="width:42px; height:42px; background: rgba(59,130,246,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-credit-card" style="color:var(--va-blue); font-size:18px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">Credit / Debit Card</div>
+                        <div style="font-size:10px; color:var(--va-muted);">Visa, Mastercard, RuPay</div>
+                    </div>
+                    <div style="font-size:10px; background:rgba(59,130,246,0.15); color:var(--va-blue); padding:3px 8px; border-radius:8px; font-weight:700;">Secure</div>
+                </div>
+
+                <div class="va-payment-option" data-method="netbanking" style="
+                    background: var(--va-surface); border: 1.5px solid var(--va-border); border-radius: 12px;
+                    padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s;
+                ">
+                    <div style="width:42px; height:42px; background: rgba(139,92,246,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-building-columns" style="color:var(--va-purple); font-size:18px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">Net Banking</div>
+                        <div style="font-size:10px; color:var(--va-muted);">SBI, HDFC, ICICI, Axis & more</div>
+                    </div>
+                </div>
+
+                <div class="va-payment-option" data-method="emi" style="
+                    background: var(--va-surface); border: 1.5px solid var(--va-border); border-radius: 12px;
+                    padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s;
+                ">
+                    <div style="width:42px; height:42px; background: rgba(245,158,11,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-calendar-check" style="color:var(--va-orange); font-size:18px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">EMI / Pay Later</div>
+                        <div style="font-size:10px; color:var(--va-muted);">From ₹${Math.round(amount / 6).toLocaleString('en-IN')}/month (6 months)</div>
+                    </div>
+                    <div style="font-size:10px; background:rgba(245,158,11,0.15); color:var(--va-orange); padding:3px 8px; border-radius:8px; font-weight:700;">0% EMI</div>
+                </div>
+
+                <div class="va-payment-option" data-method="wallet" style="
+                    background: var(--va-surface); border: 1.5px solid var(--va-border); border-radius: 12px;
+                    padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: all 0.2s;
+                ">
+                    <div style="width:42px; height:42px; background: rgba(6,182,212,0.15); border-radius:10px; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-wallet" style="color:var(--va-cyan); font-size:18px;"></i>
+                    </div>
+                    <div style="flex:1;">
+                        <div style="font-size:13px; font-weight:700;">Wallet</div>
+                        <div style="font-size:10px; color:var(--va-muted);">Amazon Pay, Mobikwik, Freecharge</div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top:12px; padding:10px; background:rgba(16,185,129,0.08); border-radius:10px; display:flex; align-items:center; gap:8px;">
+                <i class="fas fa-shield-halved" style="color:var(--va-green); font-size:14px;"></i>
+                <span style="font-size:10px; color:var(--va-muted);">256-bit SSL encrypted · IRDAI approved · Instant policy on email & WhatsApp</span>
+            </div>
+        `;
+
+        // Add hover and click effects to payment options
+        card.querySelectorAll('.va-payment-option').forEach(opt => {
+            opt.addEventListener('mouseenter', () => {
+                opt.style.borderColor = 'var(--va-blue)';
+                opt.style.background = 'rgba(59,130,246,0.05)';
+            });
+            opt.addEventListener('mouseleave', () => {
+                opt.style.borderColor = 'var(--va-border)';
+                opt.style.background = 'var(--va-surface)';
+            });
+            opt.addEventListener('click', () => {
+                const method = opt.dataset.method;
+                handlePayment(method, quote, vehicleData, amount);
+            });
+        });
+
+        infoCards.prepend(card);
+
+        // Scroll to payment card
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    // ===== PAYMENT HANDLER =====
+    function handlePayment(method, quote, vehicleData, amount) {
+        const methodNames = {
+            upi: 'UPI',
+            card: 'Credit/Debit Card',
+            netbanking: 'Net Banking',
+            emi: 'EMI',
+            wallet: 'Wallet'
+        };
+
+        // Show processing state
+        const payCard = document.getElementById('paymentCard');
+        if (payCard) {
+            payCard.innerHTML = `
+                <div style="text-align:center; padding:30px;">
+                    <div style="width:60px; height:60px; margin:0 auto 16px; background:rgba(59,130,246,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                        <i class="fas fa-spinner fa-spin" style="color:var(--va-blue); font-size:24px;"></i>
+                    </div>
+                    <h3 style="font-size:16px; font-weight:700; margin-bottom:6px;">Processing Payment</h3>
+                    <p style="font-size:12px; color:var(--va-muted);">Redirecting to ${methodNames[method] || method}...</p>
+                    <p style="font-size:11px; color:var(--va-muted); margin-top:4px;">${quote.insurerName} · ₹${amount.toLocaleString('en-IN')}</p>
+                </div>
+            `;
+
+            // Simulate payment processing
+            setTimeout(() => {
+                payCard.innerHTML = `
+                    <div style="text-align:center; padding:30px;">
+                        <div style="width:60px; height:60px; margin:0 auto 16px; background:rgba(16,185,129,0.15); border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                            <i class="fas fa-check-circle" style="color:var(--va-green); font-size:32px;"></i>
+                        </div>
+                        <h3 style="font-size:16px; font-weight:700; color:var(--va-green); margin-bottom:6px;">Payment Successful! 🎉</h3>
+                        <p style="font-size:12px; color:var(--va-muted);">Your ${quote.insurerName} policy is now active</p>
+                        <div style="background:var(--va-surface); border-radius:10px; padding:12px; margin-top:14px; text-align:left;">
+                            <div class="va-card-row"><span class="label">Policy No.</span><span class="value" style="font-size:12px;">INS-${Date.now().toString(36).toUpperCase()}</span></div>
+                            <div class="va-card-row"><span class="label">Vehicle</span><span class="value" style="font-size:12px;">${vehicleData?.formattedRegNumber || ''}</span></div>
+                            <div class="va-card-row"><span class="label">Amount Paid</span><span class="value" style="color:var(--va-green); font-weight:700;">₹${amount.toLocaleString('en-IN')}</span></div>
+                            <div class="va-card-row"><span class="label">Method</span><span class="value" style="font-size:12px;">${methodNames[method] || method}</span></div>
+                            <div class="va-card-row"><span class="label">Valid Until</span><span class="value" style="font-size:12px;">${new Date(Date.now() + 365*24*60*60*1000).toLocaleDateString('en-IN')}</span></div>
+                        </div>
+                        <p style="font-size:10px; color:var(--va-muted); margin-top:10px;">📧 Policy sent to your email & WhatsApp</p>
+                    </div>
+                `;
+                payCard.style.borderColor = 'var(--va-green)';
+                payCard.style.boxShadow = '0 0 20px rgba(16,185,129,0.15)';
+
+                // Add chat message
+                addMessage(
+                    currentLang === 'te'
+                        ? `🎉 అభినందనలు! మీ ${quote.insurerName} పాలసీ విజయవంతంగా యాక్టివేట్ అయింది. ₹${amount.toLocaleString('en-IN')} చెల్లింపు పూర్తయింది!`
+                        : `🎉 Congrats! Your ${quote.insurerName} policy is now active. ₹${amount.toLocaleString('en-IN')} payment successful!`,
+                    'bot'
+                );
+            }, 2500);
+        }
+    }
+
+    function showPremiumCard(text, brand, model, prices) {
+        infoPlaceholder.style.display = 'none';
+
+        const card = document.createElement('div');
+        card.className = 'va-card';
+        card.innerHTML = `
+            <div class="va-card-header">
+                <div class="va-card-icon premium"><i class="fas fa-calculator"></i></div>
+                <div>
+                    <div class="va-card-title">${brand || ''} ${model || ''} Premium</div>
+                    <div class="va-card-subtitle">AI Estimate</div>
+                </div>
+            </div>
+            <div class="va-card-rows">
+                ${prices ? prices.map((p, i) => `
+                    <div class="va-card-row">
+                        <span class="label">${i === 0 ? 'Premium' : i === 1 ? 'With GST' : 'Amount'}</span>
+                        <span class="value premium">${p}</span>
+                    </div>
+                `).join('') : '<div class="va-card-row"><span class="label">See chat for details</span></div>'}
+            </div>
+        `;
+        infoCards.prepend(card);
+    }
+
+    // ===== SUGGESTIONS =====
+    function renderSuggestions() {
+        const chips = langData[currentLang].chips;
+        suggestionsBar.innerHTML = chips.map(c =>
+            `<button class="va-chip">${c}</button>`
+        ).join('');
+
+        suggestionsBar.querySelectorAll('.va-chip').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const text = btn.textContent;
+                addMessage(text, 'user');
+                sendToAI(text);
+            });
+        });
+    }
+
+    // ===== LANGUAGE TOGGLE =====
+    function toggleLanguage() {
+        const langs = ['te', 'en', 'hi'];
+        const idx = langs.indexOf(currentLang);
+        currentLang = langs[(idx + 1) % langs.length];
+
+        langLabel.textContent = langData[currentLang].label;
+        textInput.placeholder = langData[currentLang].placeholder;
+        orbLabel.textContent = langData[currentLang].tapToSpeak;
+        statusText.textContent = langData[currentLang].ready;
+        renderSuggestions();
+    }
+
+    // ===== EVENT HANDLERS =====
+    function handleTextSend() {
+        const text = textInput.value.trim();
+        if (!text || isThinking) return;
+        textInput.value = '';
+        addMessage(text, 'user');
+        sendToAI(text);
+    }
+
+    // ===== INIT =====
+    function init() {
+        initBgCanvas();
+        initWaveCanvas();
+        initSpeechRecognition();
+
+        // Welcome message
+        addMessage(langData[currentLang].welcome, 'bot');
+
+        // Speak welcome after a short delay (let page render + audio context init)
+        setTimeout(() => {
+            speakText(langData[currentLang].welcome);
+        }, 800);
+
+        // Render suggestions
+        renderSuggestions();
+
+        // Set placeholder
+        textInput.placeholder = langData[currentLang].placeholder;
+
+        // Orb click
+        voiceOrb.addEventListener('click', toggleListening);
+
+        // Text input
+        sendBtn.addEventListener('click', handleTextSend);
+        textInput.addEventListener('keydown', e => {
+            if (e.key === 'Enter') handleTextSend();
+        });
+
+        // Language toggle
+        langBtn.addEventListener('click', toggleLanguage);
+
+        // Orb click also stops speaking
+        voiceOrb.addEventListener('dblclick', () => {
+            stopSpeaking();
+            setState('idle');
+        });
+
+        // Keyboard shortcut: Space to toggle voice (when not typing)
+        document.addEventListener('keydown', e => {
+            if (e.code === 'Space' && document.activeElement !== textInput) {
+                e.preventDefault();
+                toggleListening();
+            }
+        });
+    }
+
+    // Start when DOM ready
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+})();

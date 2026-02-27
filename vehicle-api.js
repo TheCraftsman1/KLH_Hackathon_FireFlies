@@ -14,6 +14,27 @@ const VehicleAPI = (() => {
         ? '' 
         : 'http://localhost:3000';
 
+    // Helper: safely parse JSON response, with better error messages
+    async function safeJsonFetch(url, options) {
+        const response = await fetch(url, options);
+        const contentType = response.headers.get('content-type') || '';
+        
+        if (!contentType.includes('application/json')) {
+            const text = await response.text();
+            console.error('Non-JSON response from', url, ':', text.substring(0, 200));
+            throw new Error(
+                'Server returned non-JSON response. Make sure you are accessing the page via http://localhost:3000'
+            );
+        }
+        
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            throw new Error(errData.error || `Server error: ${response.status}`);
+        }
+        
+        return response.json();
+    }
+
     // ===== Core API Methods =====
 
     /**
@@ -28,13 +49,11 @@ const VehicleAPI = (() => {
         }
 
         try {
-            const response = await fetch(`${API_BASE}/api/vehicle/lookup`, {
+            const result = await safeJsonFetch(`${API_BASE}/api/vehicle/lookup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ registrationNumber: clean })
             });
-            
-            const result = await response.json();
             
             if (!result.success) {
                 throw new Error(result.error || 'Lookup failed');
@@ -82,15 +101,14 @@ const VehicleAPI = (() => {
      */
     async function getQuotesByDetails(make, model, year, city) {
         try {
-            const response = await fetch(`${API_BASE}/api/insurance/quotes`, {
+            return await safeJsonFetch(`${API_BASE}/api/insurance/quotes`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ make, model, year, city })
             });
-            return await response.json();
         } catch (error) {
             console.error('Quote fetch error:', error);
-            return { success: false, error: 'Failed to fetch quotes' };
+            return { success: false, error: error.message || 'Failed to fetch quotes' };
         }
     }
 
@@ -99,10 +117,9 @@ const VehicleAPI = (() => {
      */
     async function getBrands() {
         try {
-            const response = await fetch(`${API_BASE}/api/vehicle/brands`);
-            return await response.json();
+            return await safeJsonFetch(`${API_BASE}/api/vehicle/brands`);
         } catch (error) {
-            return { success: false, error: 'Failed to fetch brands' };
+            return { success: false, error: error.message || 'Failed to fetch brands' };
         }
     }
 
@@ -111,10 +128,9 @@ const VehicleAPI = (() => {
      */
     async function getModels(brand) {
         try {
-            const response = await fetch(`${API_BASE}/api/vehicle/models/${encodeURIComponent(brand)}`);
-            return await response.json();
+            return await safeJsonFetch(`${API_BASE}/api/vehicle/models/${encodeURIComponent(brand)}`);
         } catch (error) {
-            return { success: false, error: 'Failed to fetch models' };
+            return { success: false, error: error.message || 'Failed to fetch models' };
         }
     }
 
@@ -123,14 +139,13 @@ const VehicleAPI = (() => {
      */
     async function calculatePremium(idv, ncb, cc, policyType) {
         try {
-            const response = await fetch(`${API_BASE}/api/premium/calculate`, {
+            return await safeJsonFetch(`${API_BASE}/api/premium/calculate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ idv, ncb, cc, policyType })
             });
-            return await response.json();
         } catch (error) {
-            return { success: false, error: 'Failed to calculate premium' };
+            return { success: false, error: error.message || 'Failed to calculate premium' };
         }
     }
 
@@ -139,10 +154,9 @@ const VehicleAPI = (() => {
      */
     async function getRTOInfo(code) {
         try {
-            const response = await fetch(`${API_BASE}/api/rto/${encodeURIComponent(code)}`);
-            return await response.json();
+            return await safeJsonFetch(`${API_BASE}/api/rto/${encodeURIComponent(code)}`);
         } catch (error) {
-            return { success: false, error: 'Failed to fetch RTO info' };
+            return { success: false, error: error.message || 'Failed to fetch RTO info' };
         }
     }
 

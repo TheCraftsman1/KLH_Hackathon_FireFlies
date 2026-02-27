@@ -1,4 +1,4 @@
-// ===== Insurix.India Clone - Full Interactive JavaScript =====
+// ===== Insurix.India - Full Interactive JavaScript =====
 
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -204,67 +204,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== LIVE CHAT =====
-    var chatBtn = document.getElementById('chatBtn');
-    var chatWindow = document.getElementById('chatWindow');
-    var chatClose = document.getElementById('chatClose');
-    var chatInput = document.getElementById('chatInput');
-    var chatSend = document.getElementById('chatSend');
-    var chatBody = document.getElementById('chatBody');
-
-    if (chatBtn) {
-        chatBtn.addEventListener('click', function() {
-            chatWindow.classList.toggle('active');
-        });
-    }
-
-    if (chatClose) {
-        chatClose.addEventListener('click', function() {
-            chatWindow.classList.remove('active');
-        });
-    }
-
-    function addChatMessage(text, type) {
-        var msg = document.createElement('div');
-        msg.className = 'chat-message ' + type;
-        msg.innerHTML = '<p>' + text + '</p>';
-        chatBody.appendChild(msg);
-        chatBody.scrollTop = chatBody.scrollHeight;
-    }
-
-    var botResponses = [
-        "I'd be happy to help you with that! Could you tell me which type of insurance you're looking for?",
-        "We have great plans starting from ₹490/month for term life insurance. Would you like me to share more details?",
-        "You can compare plans from 51+ insurers on our platform. Let me help you find the best one!",
-        "Our team of experts is available 24/7. Would you like me to connect you with an advisor?",
-        "That's a great question! Let me find the best answer for you.",
-        "We offer cashless claims at 7000+ network hospitals. Would you like to know more about health insurance?",
-        "You can save up to 25% on your insurance premium by buying online through Insurix.India!"
-    ];
-
-    function sendChat() {
-        var text = chatInput.value.trim();
-        if (text) {
-            addChatMessage(text, 'user');
-            chatInput.value = '';
-            // Bot response after delay
-            setTimeout(function() {
-                var response = botResponses[Math.floor(Math.random() * botResponses.length)];
-                addChatMessage(response, 'bot');
-            }, 1000);
-        }
-    }
-
-    if (chatSend) {
-        chatSend.addEventListener('click', sendChat);
-    }
-
-    if (chatInput) {
-        chatInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') sendChat();
-        });
-    }
-
     // ===== PRODUCT ITEM CLICK =====
     document.querySelectorAll('.product-item').forEach(function(item) {
         item.addEventListener('click', function() {
@@ -430,6 +369,93 @@ document.addEventListener('DOMContentLoaded', function() {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
             showNotification('Redirecting to app store...');
+        });
+    });
+
+    // ===== CATCH-ALL: ANY href="#" LINK THAT HAS NO HANDLER =====
+    // Give every dead link a visible response so nothing feels broken
+    document.querySelectorAll('a[href="#"]').forEach(function(link) {
+        // Skip links that already have a dedicated click handler or are inside handled containers
+        if (link.classList.contains('hero-cta') || link.classList.contains('also-buy-tag') ||
+            link.classList.contains('btn-view-all') || link.classList.contains('know-more-link') ||
+            link.classList.contains('app-store-btn') || link.classList.contains('btn-signin') ||
+            link.classList.contains('talk-expert') || link.classList.contains('nav-link') ||
+            link.closest('.calc-list') || link.closest('.product-item')) return;
+
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            var text = this.textContent.trim();
+            // Mega dropdown items
+            if (this.closest('.mega-dropdown') || this.closest('.dropdown-menu')) {
+                showNotification('Opening ' + text + '...');
+                return;
+            }
+            // Footer links
+            if (this.closest('.footer')) {
+                showNotification(text);
+                return;
+            }
+            // Social icons
+            if (this.closest('.social-icons')) {
+                var icon = this.querySelector('i');
+                var platform = icon ? icon.className.replace(/.*fa-/, '').replace(/-.*/, '') : 'social';
+                showNotification('Opening ' + platform.charAt(0).toUpperCase() + platform.slice(1) + '...');
+                return;
+            }
+            // Promo buttons
+            if (this.classList.contains('promo-btn')) {
+                showNotification('Booking home visit...');
+                return;
+            }
+            // Generic fallback
+            if (text.length > 0 && text.length < 60) {
+                showNotification(text);
+            } else {
+                showNotification('Coming soon!');
+            }
+        });
+    });
+
+    // ===== NAV DROPDOWN LINKS (desktop) — give mega-menu items a click response =====
+    document.querySelectorAll('.mega-dropdown a, .dropdown-menu a').forEach(function(link) {
+        if (link.getAttribute('href') === '#') {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                showNotification('Opening ' + this.textContent.trim() + '...');
+            });
+        }
+    });
+
+    // ===== HELP CONTACT CARDS =====
+    document.querySelectorAll('.help-contact-card').forEach(function(card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+            var strong = this.querySelector('strong');
+            if (strong) {
+                if (strong.textContent.includes('@')) {
+                    showNotification('Opening email: ' + strong.textContent);
+                } else {
+                    showNotification('Calling ' + strong.textContent + '...');
+                }
+            }
+        });
+    });
+
+    // ===== BRAND ITEMS =====
+    document.querySelectorAll('.brand-item').forEach(function(item) {
+        item.style.cursor = 'pointer';
+        item.addEventListener('click', function() {
+            var logo = this.querySelector('.brand-logo');
+            if (logo) showNotification('Visiting ' + logo.textContent.trim() + '...');
+        });
+    });
+
+    // ===== INFO CARD CLICK (Ask Insurix / Fraudsters) =====
+    document.querySelectorAll('.info-card').forEach(function(card) {
+        card.style.cursor = 'pointer';
+        card.addEventListener('click', function() {
+            var h4 = this.querySelector('h4');
+            if (h4) showNotification(h4.textContent.trim());
         });
     });
 
