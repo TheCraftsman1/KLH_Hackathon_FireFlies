@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InsurGuard Intelligence Engine — Insurix.India</title>
+    <link rel="stylesheet" href="dashboard.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="ig-dashboard">
+
+    <!-- ===== HEADER ===== -->
+    <header class="ig-header">
+        <div class="ig-header-inner">
+            <a href="index.html" class="ig-logo">
+                <div class="ig-logo-icon">🛡️</div>
+                <div>
+                    <div class="ig-logo-text">InsurGuard</div>
+                    <div class="ig-logo-sub">Intelligence Engine</div>
+                </div>
+            </a>
+            <nav class="ig-header-nav">
+                <a href="index.html" class="ig-nav-btn"><i class="fas fa-home"></i> Home</a>
+                <a href="negotiation.html" class="ig-nav-btn"><i class="fas fa-handshake"></i> Negotiate</a>
+                <a href="dashboard.html" class="ig-nav-btn active"><i class="fas fa-chart-line"></i> Dashboard</a>
+                <a href="voice-assistant.html" class="ig-nav-btn"><i class="fas fa-microphone"></i> Voice AI</a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <main class="ig-main">
+        <h1 class="ig-page-title">🧠 InsurGuard Intelligence Engine</h1>
+        <p class="ig-page-subtitle">Predictive risk modeling powered by IRDAI public disclosures, IIB data & behavioral economics</p>
+
+        <!-- ===== TABS ===== -->
+        <div class="ig-tabs">
+            <button class="ig-tab active" data-tab="claim" onclick="switchTab('claim')">
+                <i class="fas fa-shield-halved"></i> Loot-Shield
+            </button>
+            <button class="ig-tab" data-tab="vulnerability" onclick="switchTab('vulnerability')">
+                <i class="fas fa-heart-pulse"></i> Gap Analysis
+            </button>
+            <button class="ig-tab" data-tab="tco" onclick="switchTab('tco')">
+                <i class="fas fa-chart-area"></i> TCO Simulator
+            </button>
+        </div>
+
+        <!-- =============================================== -->
+        <!-- 2.1 LOOT-SHIELD: Predictive Claim Settlement    -->
+        <!-- =============================================== -->
+        <div class="ig-panel active" id="panel-claim">
+            <div class="ig-card">
+                <div class="ig-card-header">
+                    <div class="ig-card-title"><i class="fas fa-shield-halved"></i> Predictive Claim Settlement Engine</div>
+                    <span class="ig-card-badge irdai">IRDAI Data</span>
+                </div>
+                <p style="font-size:13px;color:var(--ig-text-light);margin-bottom:20px;">
+                    Don't rely on headline CSR (Claim Settlement Ratio). We use <strong>SLA-indexed age-wise rejection rates</strong>, 
+                    theft-zone data, and hidden policy triggers (room rent caps, restoration benefits) to predict your <em>actual</em> chance of cashless approval.
+                </p>
+
+                <div class="ig-form-grid">
+                    <div class="ig-form-group">
+                        <label>Insurer</label>
+                        <select class="ig-select" id="claim-insurer">
+                            <option value="hdfc">HDFC ERGO</option>
+                            <option value="icici">ICICI Lombard</option>
+                            <option value="bajaj" selected>Bajaj Allianz</option>
+                            <option value="tata">Tata AIG</option>
+                            <option value="sbi">SBI General</option>
+                            <option value="max">Max Life</option>
+                        </select>
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Claim Type</label>
+                        <select class="ig-select" id="claim-type">
+                            <option value="motor_accident">Motor — Accident/Collision</option>
+                            <option value="motor_theft">Motor — Theft</option>
+                            <option value="motor_ownDamage">Motor — Own Damage</option>
+                            <option value="health_hospitalization">Health — Hospitalization</option>
+                            <option value="health_surgery">Health — Major Surgery</option>
+                        </select>
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Your Age</label>
+                        <input type="number" class="ig-input" id="claim-userAge" placeholder="e.g. 32" value="35">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Vehicle Age (years)</label>
+                        <input type="number" class="ig-input" id="claim-vehicleAge" placeholder="e.g. 3" value="3">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>State Code</label>
+                        <select class="ig-select" id="claim-state">
+                            <option value="TS">TS — Telangana</option>
+                            <option value="AP">AP — Andhra Pradesh</option>
+                            <option value="KA">KA — Karnataka</option>
+                            <option value="MH">MH — Maharashtra</option>
+                            <option value="DL" selected>DL — Delhi</option>
+                            <option value="TN">TN — Tamil Nadu</option>
+                            <option value="UP">UP — Uttar Pradesh</option>
+                            <option value="RJ">RJ — Rajasthan</option>
+                            <option value="KL">KL — Kerala</option>
+                            <option value="GJ">GJ — Gujarat</option>
+                            <option value="WB">WB — West Bengal</option>
+                            <option value="HR">HR — Haryana</option>
+                            <option value="PB">PB — Punjab</option>
+                            <option value="MP">MP — Madhya Pradesh</option>
+                        </select>
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Policy Type</label>
+                        <select class="ig-select" id="claim-policyType">
+                            <option value="comprehensive" selected>Comprehensive</option>
+                            <option value="third-party">Third-Party Only</option>
+                        </select>
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Sum Insured (₹)</label>
+                        <input type="number" class="ig-input" id="claim-sumInsured" placeholder="e.g. 500000" value="500000">
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+                    <div class="ig-checkbox-group">
+                        <input type="checkbox" id="claim-zeroDep">
+                        <label for="claim-zeroDep">Zero Depreciation Cover</label>
+                    </div>
+                    <div class="ig-checkbox-group">
+                        <input type="checkbox" id="claim-roomRentWaiver">
+                        <label for="claim-roomRentWaiver">Room Rent Waiver</label>
+                    </div>
+                </div>
+                <button class="ig-btn ig-btn-primary" id="btn-predict-claim" onclick="predictClaim()">
+                    <i class="fas fa-bolt"></i> Calculate Friction Score
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div class="ig-loading" id="claim-loading">
+                <div class="ig-spinner"></div>
+                <div class="ig-loading-text">Running predictive model against IRDAI data...</div>
+            </div>
+            <div class="ig-results" id="claim-results">
+                <div class="ig-card">
+                    <div class="ig-score-section" id="claim-score-section"></div>
+                </div>
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-list-check"></i> Risk Factors Breakdown</div>
+                    </div>
+                    <div class="ig-factors" id="claim-factors"></div>
+                </div>
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-ranking-star"></i> All Insurers Comparison</div>
+                        <span class="ig-card-badge live">Live Ranking</span>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="ig-comparison-table" id="claim-comparison"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =============================================== -->
+        <!-- 2.2 GAP ANALYSIS: Vulnerability Assessment       -->
+        <!-- =============================================== -->
+        <div class="ig-panel" id="panel-vulnerability">
+            <div class="ig-card">
+                <div class="ig-card-header">
+                    <div class="ig-card-title"><i class="fas fa-heart-pulse"></i> Holistic Vulnerability Assessment</div>
+                    <span class="ig-card-badge irdai">Fragility Index</span>
+                </div>
+                <p style="font-size:13px;color:var(--ig-text-light);margin-bottom:20px;">
+                    Benchmarked against the <strong>Middle-Class Financial Fragility Index</strong>. We calculate your 
+                    <em>Survival Runway</em> — how many months your insurance covers in a crisis — factoring in 12% medical inflation.
+                </p>
+
+                <div class="ig-form-grid">
+                    <div class="ig-form-group">
+                        <label>Your Age</label>
+                        <input type="number" class="ig-input" id="vuln-age" placeholder="e.g. 35" value="35">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Family Size</label>
+                        <input type="number" class="ig-input" id="vuln-familySize" placeholder="e.g. 4" value="4">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Annual Income (₹)</label>
+                        <input type="number" class="ig-input" id="vuln-income" placeholder="e.g. 1200000" value="1200000">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Monthly Expenses (₹)</label>
+                        <input type="number" class="ig-input" id="vuln-expenses" placeholder="e.g. 50000" value="50000">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Existing Health Cover (₹)</label>
+                        <input type="number" class="ig-input" id="vuln-healthCover" placeholder="e.g. 500000" value="500000">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Existing Life Cover (₹)</label>
+                        <input type="number" class="ig-input" id="vuln-lifeCover" placeholder="e.g. 5000000" value="5000000">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Motor Policies Count</label>
+                        <input type="number" class="ig-input" id="vuln-motorPolicies" placeholder="e.g. 1" value="1">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Dependents</label>
+                        <input type="number" class="ig-input" id="vuln-dependents" placeholder="e.g. 3" value="3">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Outstanding Loans (₹)</label>
+                        <input type="number" class="ig-input" id="vuln-loans" placeholder="e.g. 2000000" value="2000000">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>City Tier</label>
+                        <select class="ig-select" id="vuln-city">
+                            <option value="metro" selected>Metro (Delhi/Mumbai/Bangalore)</option>
+                            <option value="tier1">Tier 1 (Hyderabad/Pune/Chennai)</option>
+                            <option value="tier2">Tier 2 (Jaipur/Lucknow/Kochi)</option>
+                            <option value="tier3">Tier 3 / Rural</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:20px;">
+                    <div class="ig-checkbox-group">
+                        <input type="checkbox" id="vuln-personalAccident">
+                        <label for="vuln-personalAccident">Personal Accident Cover</label>
+                    </div>
+                    <div class="ig-checkbox-group">
+                        <input type="checkbox" id="vuln-criticalIllness">
+                        <label for="vuln-criticalIllness">Critical Illness Cover</label>
+                    </div>
+                    <div class="ig-checkbox-group">
+                        <input type="checkbox" id="vuln-homeInsurance">
+                        <label for="vuln-homeInsurance">Home Insurance</label>
+                    </div>
+                </div>
+                <button class="ig-btn ig-btn-primary" id="btn-vulnerability" onclick="assessVulnerability()">
+                    <i class="fas fa-magnifying-glass-chart"></i> Run Vulnerability Assessment
+                </button>
+            </div>
+
+            <div class="ig-loading" id="vuln-loading">
+                <div class="ig-spinner"></div>
+                <div class="ig-loading-text">Analyzing against Financial Fragility Index...</div>
+            </div>
+            <div class="ig-results" id="vuln-results">
+                <!-- Survival Runway -->
+                <div class="ig-runway" id="vuln-runway"></div>
+                <!-- Score -->
+                <div class="ig-card">
+                    <div class="ig-score-section" id="vuln-score-section"></div>
+                </div>
+                <!-- Coverage Gaps -->
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-chart-pie"></i> Coverage Gap Breakdown</div>
+                    </div>
+                    <div class="ig-gap-section" id="vuln-gaps"></div>
+                </div>
+                <!-- Inflation Projections -->
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-fire-flame-curved"></i> Medical Inflation Impact (2026 → 2031)</div>
+                        <span class="ig-card-badge irdai">12% YoY</span>
+                    </div>
+                    <div id="vuln-inflation-warning" class="ig-alert warning" style="display:none;"></div>
+                    <div class="ig-inflation-grid" id="vuln-inflation"></div>
+                </div>
+                <!-- Recommendations -->
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-lightbulb"></i> Personalized Recommendations</div>
+                    </div>
+                    <div class="ig-recommendations" id="vuln-recommendations"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =============================================== -->
+        <!-- 2.3 TCO SIMULATOR: Total Cost of Ownership       -->
+        <!-- =============================================== -->
+        <div class="ig-panel" id="panel-tco">
+            <div class="ig-card">
+                <div class="ig-card-header">
+                    <div class="ig-card-title"><i class="fas fa-chart-area"></i> Total Cost of Ownership Simulator</div>
+                    <span class="ig-card-badge irdai">NCB TRAP DETECTION</span>
+                </div>
+                <p style="font-size:13px;color:var(--ig-text-light);margin-bottom:20px;">
+                    Uncover the <strong>"Loyalty Penalty"</strong> — how insurers increase your base rate while giving NCB discounts, creating the illusion of savings.
+                    See the real 5-year cost of ownership: premiums paid vs. actual asset depreciation.
+                </p>
+
+                <div class="ig-form-grid">
+                    <div class="ig-form-group">
+                        <label>Registration Number</label>
+                        <input type="text" class="ig-input" id="tco-regNumber" placeholder="e.g. TS08JM2665" value="TS08JM2665">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>— OR Make —</label>
+                        <select class="ig-select" id="tco-make">
+                            <option value="">Select Brand</option>
+                            <option value="Hero">Hero</option>
+                            <option value="Honda">Honda</option>
+                            <option value="Bajaj">Bajaj</option>
+                            <option value="TVS">TVS</option>
+                            <option value="Yamaha">Yamaha</option>
+                            <option value="Royal Enfield">Royal Enfield</option>
+                            <option value="KTM">KTM</option>
+                            <option value="Suzuki">Suzuki</option>
+                            <option value="Ola">Ola</option>
+                            <option value="Ather">Ather</option>
+                        </select>
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Model</label>
+                        <input type="text" class="ig-input" id="tco-model" placeholder="e.g. Activa 6G">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Purchase Year</label>
+                        <input type="number" class="ig-input" id="tco-year" placeholder="e.g. 2022" value="2022">
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Current NCB Years</label>
+                        <select class="ig-select" id="tco-ncb">
+                            <option value="0">0 — No NCB</option>
+                            <option value="1">1 Year (20%)</option>
+                            <option value="2" selected>2 Years (25%)</option>
+                            <option value="3">3 Years (35%)</option>
+                            <option value="4">4 Years (45%)</option>
+                            <option value="5">5 Years (50% max)</option>
+                        </select>
+                    </div>
+                    <div class="ig-form-group">
+                        <label>Switch Insurer Every</label>
+                        <select class="ig-select" id="tco-switch">
+                            <option value="0">Never (Loyal Customer)</option>
+                            <option value="1">Every Year</option>
+                            <option value="2" selected>Every 2 Years</option>
+                            <option value="3">Every 3 Years</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="ig-btn ig-btn-primary" id="btn-tco" onclick="simulateTCO()">
+                    <i class="fas fa-play"></i> Run 5-Year Simulation
+                </button>
+            </div>
+
+            <div class="ig-loading" id="tco-loading">
+                <div class="ig-spinner"></div>
+                <div class="ig-loading-text">Simulating 5-year ownership model...</div>
+            </div>
+            <div class="ig-results" id="tco-results">
+                <!-- Summary Stats -->
+                <div class="ig-tco-summary-grid" id="tco-summary"></div>
+                <!-- NCB Trap Alert -->
+                <div id="tco-ncb-alert"></div>
+                <!-- Chart -->
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-chart-line"></i> 5-Year Real Cost Graph</div>
+                        <span class="ig-card-badge live">Interactive</span>
+                    </div>
+                    <div class="ig-chart-container">
+                        <canvas id="tco-chart" class="ig-chart-canvas"></canvas>
+                    </div>
+                </div>
+                <!-- Year-by-Year Breakdown -->
+                <div class="ig-card">
+                    <div class="ig-card-header">
+                        <div class="ig-card-title"><i class="fas fa-table"></i> Year-by-Year Breakdown</div>
+                    </div>
+                    <div style="overflow-x:auto;">
+                        <table class="ig-tco-table" id="tco-table"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- ===== FOOTER ===== -->
+    <footer style="background:#1E1B4B;color:rgba(255,255,255,0.7);text-align:center;padding:20px;font-size:12px;">
+        <div>InsurGuard Intelligence Engine — Powered by <strong style="color:white;">Insurix.India</strong></div>
+        <div style="margin-top:4px;opacity:0.5;">Data Sources: IRDAI Public Disclosures FY 2024-25 | IIB Motor Theft Index | Medical Inflation: 12% (IRDAI Health Report)</div>
+    </footer>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

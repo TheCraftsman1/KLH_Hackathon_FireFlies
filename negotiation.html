@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Negotiation Agent — Insurix.India</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="negotiation.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- ===== HEADER (matches index.html exactly) ===== -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="index.html" class="logo">
+                    <div class="logo-name"><span class="logo-policy">Insurix</span><span class="logo-dot">.India</span></div>
+                    <div class="logo-tagline">SMART INSURANCE FOR EVERY FAMILY</div>
+                </a>
+                <nav class="nav" id="mainNav">
+                    <ul class="nav-list">
+                        <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
+                        <li class="nav-item"><a href="index.html#products" class="nav-link">Insurance Products</a></li>
+                        <li class="nav-item"><a href="voice-assistant.html" class="nav-link">AI Assistant</a></li>
+                    </ul>
+                </nav>
+                <div class="header-right">
+                    <a href="negotiation.html" class="ai-assistant-btn negotiate-header-btn" title="AI Negotiation Agent">
+                        <i class="fas fa-handshake"></i>
+                        <span>Negotiate</span>
+                    </a>
+                    <a href="voice-assistant.html" class="ai-assistant-btn" title="AI Voice Assistant">
+                        <i class="fas fa-headset"></i>
+                        <span>AI Assistant</span>
+                    </a>
+                    <a href="index.html" class="talk-expert">
+                        <i class="fas fa-home"></i> Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== HERO ===== -->
+    <section class="neg-hero">
+        <div class="neg-hero-bg">
+            <div class="neg-hero-orb neg-hero-orb-1"></div>
+            <div class="neg-hero-orb neg-hero-orb-2"></div>
+            <div class="neg-hero-orb neg-hero-orb-3"></div>
+            <div class="neg-hero-grid"></div>
+        </div>
+        <div class="container">
+            <div class="neg-hero-content">
+                <div class="neg-hero-badge">
+                    <i class="fas fa-sparkles"></i> AI-Powered Negotiation Engine
+                </div>
+                <h1 class="neg-hero-title">
+                    Let our AI Agent<br>
+                    <span class="neg-hero-gradient-text">Negotiate Your Best Deal</span>
+                </h1>
+                <p class="neg-hero-subtitle">
+                    Our AI simultaneously negotiates with 6 top insurers across 3 rounds to secure the
+                    lowest premium with maximum coverage for your vehicle renewal.
+                </p>
+
+                <!-- Vehicle Input -->
+                <div class="neg-input-card">
+                    <div class="neg-input-row">
+                        <div class="neg-input-wrapper">
+                            <i class="fas fa-car-side neg-input-icon"></i>
+                            <input type="text" id="regInput" class="neg-input" placeholder="Enter Vehicle Number e.g. TS09EA4321" maxlength="14" autocomplete="off" spellcheck="false">
+                        </div>
+                        <button id="btnStartNegotiate" class="neg-btn-start">
+                            <i class="fas fa-bolt"></i>
+                            <span>Start Negotiation</span>
+                        </button>
+                    </div>
+                    <div class="neg-demo-row">
+                        <span class="neg-demo-label">Try demo:</span>
+                        <button class="neg-demo-chip" data-reg="TS08JM2665"><i class="fas fa-motorcycle"></i> Honda Activa</button>
+                        <button class="neg-demo-chip" data-reg="TS09EA4321"><i class="fas fa-car"></i> Hyundai Creta</button>
+                        <button class="neg-demo-chip" data-reg="AP28BH3456"><i class="fas fa-motorcycle"></i> TVS Apache</button>
+                        <button class="neg-demo-chip" data-reg="KA01MH7890"><i class="fas fa-car"></i> Tata Nexon</button>
+                        <button class="neg-demo-chip" data-reg="DL01CA7777"><i class="fas fa-car"></i> Kia Seltos</button>
+                    </div>
+                </div>
+
+                <!-- Floating Stats -->
+                <div class="neg-hero-stats">
+                    <div class="neg-hero-stat">
+                        <span class="neg-stat-num">6</span>
+                        <span class="neg-stat-label">Insurers Compared</span>
+                    </div>
+                    <div class="neg-hero-stat">
+                        <span class="neg-stat-num">3</span>
+                        <span class="neg-stat-label">Negotiation Rounds</span>
+                    </div>
+                    <div class="neg-hero-stat">
+                        <span class="neg-stat-num">~22%</span>
+                        <span class="neg-stat-label">Avg. Savings</span>
+                    </div>
+                    <div class="neg-hero-stat">
+                        <span class="neg-stat-num">&lt;30s</span>
+                        <span class="neg-stat-label">Total Time</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== VEHICLE INFO CARD ===== -->
+    <section class="neg-vehicle-section" id="vehicleCardSection">
+        <div class="container">
+            <div class="neg-vehicle-card" id="vehicleCard">
+                <!-- Filled by JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== NEGOTIATION ARENA ===== -->
+    <section class="neg-arena" id="negotiationArena">
+        <div class="container">
+
+            <!-- Savings Hero -->
+            <div class="neg-savings-card" id="savingsBanner">
+                <div class="neg-savings-left">
+                    <div class="neg-savings-icon"><i class="fas fa-piggy-bank"></i></div>
+                    <div>
+                        <h3>Total Savings Achieved</h3>
+                        <p>AI negotiated across 3 rounds with 6 insurers</p>
+                    </div>
+                </div>
+                <div class="neg-savings-right">
+                    <span class="neg-savings-amount" id="savingsAmount">₹0</span>
+                    <span class="neg-savings-label">You Save</span>
+                </div>
+            </div>
+
+            <!-- Stepper -->
+            <div class="neg-stepper" id="roundStepper">
+                <div class="neg-step">
+                    <div class="neg-step-circle" id="step1"><span>1</span></div>
+                    <div class="neg-step-label">Initial Push</div>
+                </div>
+                <div class="neg-step-line" id="line1"></div>
+                <div class="neg-step">
+                    <div class="neg-step-circle" id="step2"><span>2</span></div>
+                    <div class="neg-step-label">Counter Offers</div>
+                </div>
+                <div class="neg-step-line" id="line2"></div>
+                <div class="neg-step">
+                    <div class="neg-step-circle" id="step3"><span>3</span></div>
+                    <div class="neg-step-label">Best & Final</div>
+                </div>
+            </div>
+
+            <!-- Rounds Container -->
+            <div id="roundsContainer"></div>
+
+        </div>
+    </section>
+
+    <!-- ===== ACCEPTED BANNER ===== -->
+    <div class="neg-accepted" id="acceptedBanner">
+        <div class="container">
+            <div class="neg-accepted-inner">
+                <div class="neg-accepted-icon">🎉</div>
+                <h2 id="acceptedTitle">Policy Accepted!</h2>
+                <p id="acceptedDetails"></p>
+                <div class="neg-policy-num" id="policyNumber"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== LOADING OVERLAY ===== -->
+    <div class="neg-overlay" id="negotiatingOverlay">
+        <div class="neg-overlay-content">
+            <div class="neg-spinner">
+                <div class="neg-spinner-ring"></div>
+                <div class="neg-spinner-icon"><i class="fas fa-robot"></i></div>
+            </div>
+            <h3>AI Agent is Negotiating</h3>
+            <p>Simultaneously talking to 6 insurers to find your best deal</p>
+            <div class="neg-overlay-steps">
+                <div class="neg-overlay-step" id="negotiateStatusText">
+                    <i class="fas fa-circle-notch fa-spin"></i> Initializing session...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="neg-footer">
+        <div class="container">
+            <div class="neg-footer-inner">
+                <div class="neg-footer-brand">
+                    <span class="neg-footer-logo">Insurix<span>.India</span></span>
+                    <p>AI-Powered Insurance Platform</p>
+                </div>
+                <div class="neg-footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="voice-assistant.html">AI Assistant</a>
+                    <a href="negotiation.html">Negotiate</a>
+                </div>
+                <p class="neg-footer-copy">&copy; 2026 Insurix.India &mdash; Built for KLH Hackathon | Problem Statement #7</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="negotiation.js"></script>
+</body>
+</html>
