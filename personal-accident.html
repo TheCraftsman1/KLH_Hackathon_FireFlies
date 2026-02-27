@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Accident Insurance - Insurix.India</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .product-hero { background: linear-gradient(135deg, #DC2626 0%, #EF4444 50%, #F87171 100%); color: #fff; padding: 80px 0 60px; }
+        .product-hero h1 { font-size: 2.8rem; font-weight: 800; margin-bottom: 12px; }
+        .product-hero p { font-size: 1.15rem; opacity: 0.9; max-width: 600px; }
+        .product-hero .hero-badge { display: inline-block; background: rgba(255,255,255,0.2); backdrop-filter: blur(10px); padding: 6px 18px; border-radius: 50px; font-size: 0.85rem; font-weight: 600; margin-bottom: 18px; }
+        .product-hero .hero-icon { font-size: 3rem; margin-bottom: 16px; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: rgba(255,255,255,0.8); text-decoration: none; font-size: 0.9rem; margin-bottom: 20px; }
+        .back-link:hover { color: #fff; }
+        .product-content { padding: 60px 0; }
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 40px; }
+        .info-section { margin-bottom: 40px; }
+        .info-section h2 { font-size: 1.6rem; font-weight: 800; color: #1E293B; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+        .info-section h2 i { color: #DC2626; font-size: 1.2rem; }
+        .info-section p { color: #475569; line-height: 1.8; margin-bottom: 12px; }
+        .info-section ul { list-style: none; padding: 0; }
+        .info-section ul li { padding: 10px 0; color: #475569; border-bottom: 1px solid #F1F5F9; display: flex; align-items: flex-start; gap: 10px; }
+        .info-section ul li i { color: #10B981; margin-top: 4px; }
+        .sidebar-card { background: #fff; border-radius: 16px; padding: 28px; box-shadow: 0 4px 24px rgba(0,0,0,0.06); border: 1px solid #F1F5F9; position: sticky; top: 100px; }
+        .sidebar-card h3 { font-size: 1.2rem; font-weight: 700; color: #1E293B; margin-bottom: 16px; }
+        .sidebar-card .price-tag { font-size: 2rem; font-weight: 800; color: #DC2626; }
+        .sidebar-card .price-tag span { font-size: 0.9rem; color: #94A3B8; font-weight: 400; }
+        .sidebar-card .cta-btn { display: block; width: 100%; padding: 14px; background: linear-gradient(135deg, #DC2626, #EF4444); color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700; cursor: pointer; text-align: center; margin-top: 16px; transition: transform 0.2s, box-shadow 0.2s; }
+        .sidebar-card .cta-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(220,38,38,0.4); }
+        .plan-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-top: 20px; }
+        .plan-card { background: #fff; border-radius: 14px; padding: 24px; border: 2px solid #F1F5F9; transition: all 0.3s; text-align: center; }
+        .plan-card:hover { border-color: #DC2626; transform: translateY(-4px); box-shadow: 0 12px 30px rgba(220,38,38,0.12); }
+        .plan-card .plan-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px; font-size: 1.4rem; }
+        .plan-card h4 { font-size: 1rem; font-weight: 700; color: #1E293B; margin-bottom: 6px; }
+        .plan-card p { font-size: 0.85rem; color: #64748B; }
+        .stats-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin: 40px 0; }
+        .stat-box { background: linear-gradient(135deg, #FEF2F2, #FEE2E2); border-radius: 14px; padding: 24px; text-align: center; }
+        .stat-box .stat-num { font-size: 1.8rem; font-weight: 800; color: #DC2626; }
+        .stat-box .stat-label { font-size: 0.85rem; color: #64748B; margin-top: 4px; }
+        .faq-item { background: #fff; border-radius: 12px; border: 1px solid #F1F5F9; margin-bottom: 12px; overflow: hidden; }
+        .faq-item summary { padding: 18px 24px; font-weight: 600; color: #1E293B; cursor: pointer; list-style: none; display: flex; justify-content: space-between; }
+        .faq-item summary::after { content: '\f078'; font-family: 'Font Awesome 6 Free'; font-weight: 900; color: #DC2626; transition: transform 0.3s; }
+        .faq-item[open] summary::after { transform: rotate(180deg); }
+        .faq-item .faq-body { padding: 0 24px 18px; color: #475569; line-height: 1.7; }
+        @media (max-width: 768px) { .content-grid { grid-template-columns: 1fr; } .plan-cards { grid-template-columns: 1fr; } .stats-row { grid-template-columns: repeat(2, 1fr); } .product-hero h1 { font-size: 2rem; } }
+    </style>
+</head>
+<body>
+    <header class="header" id="header"><div class="container"><div class="header-inner">
+        <a href="index.html" class="logo"><span class="logo-policy">Insurix</span><span class="logo-dot">.India</span><div class="logo-tagline">SMART INSURANCE FOR EVERY FAMILY</div></a>
+        <div class="header-right"><a href="index.html" class="talk-expert"><i class="fas fa-home"></i> Home</a><a href="voice-assistant.html" class="btn-signin">AI Assistant</a></div>
+    </div></div></header>
+
+    <section class="product-hero">
+        <div class="container">
+            <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back to All Products</a>
+            <div class="hero-icon"><i class="fas fa-user-shield"></i></div>
+            <div class="hero-badge"><i class="fas fa-ambulance"></i> 24/7 Accident Protection</div>
+            <h1>Personal Accident Insurance</h1>
+            <p>Protect yourself and your family against accidental death, disability, and injury. Get comprehensive coverage for medical expenses and income loss due to accidents.</p>
+        </div>
+    </section>
+
+    <section class="product-content">
+        <div class="container">
+            <div class="stats-row">
+                <div class="stat-box"><div class="stat-num">₹1 Cr</div><div class="stat-label">Accidental Death</div></div>
+                <div class="stat-box"><div class="stat-num">₹50L</div><div class="stat-label">Disability Cover</div></div>
+                <div class="stat-box"><div class="stat-num">₹150</div><div class="stat-label">Starting/month</div></div>
+                <div class="stat-box"><div class="stat-num">Worldwide</div><div class="stat-label">Coverage</div></div>
+            </div>
+            <div class="content-grid">
+                <div>
+                    <div class="info-section">
+                        <h2><i class="fas fa-info-circle"></i> What is Personal Accident Insurance?</h2>
+                        <p>Personal Accident Insurance provides financial protection against unforeseen accidents that may result in death, permanent/temporary disability, or bodily injury. <strong>It covers accidental death, permanent total/partial disability, and temporary total disability with weekly income replacement.</strong></p>
+                        <p>Unlike health insurance (which covers illness), PA insurance specifically covers accident-related expenses including hospitalization, fractures, burns, and ambulance charges.</p>
+                    </div>
+                    <div class="info-section">
+                        <h2><i class="fas fa-check-circle"></i> Key Benefits</h2>
+                        <ul>
+                            <li><i class="fas fa-check"></i> <strong>Accidental Death Benefit:</strong> Lump sum payout to nominee up to ₹1 Crore</li>
+                            <li><i class="fas fa-check"></i> <strong>Permanent Disability:</strong> 100% sum assured for permanent total disability</li>
+                            <li><i class="fas fa-check"></i> <strong>Temporary Disability:</strong> Weekly income benefit during recovery period</li>
+                            <li><i class="fas fa-check"></i> <strong>Medical Expenses:</strong> Covers hospitalization costs due to accidents</li>
+                            <li><i class="fas fa-check"></i> <strong>Worldwide Coverage:</strong> Protection wherever you go</li>
+                            <li><i class="fas fa-check"></i> <strong>Child Education:</strong> Some plans cover children's education if parent dies</li>
+                        </ul>
+                    </div>
+                    <div class="info-section">
+                        <h2><i class="fas fa-building"></i> Top PA Insurance Plans</h2>
+                        <div class="plan-cards">
+                            <div class="plan-card">
+                                <div class="plan-icon" style="background:#FEF2F2; color:#DC2626;"><i class="fas fa-star"></i></div>
+                                <h4>HDFC ERGO PA Policy</h4>
+                                <p>₹1 Cr cover<br>₹150/month</p>
+                            </div>
+                            <div class="plan-card">
+                                <div class="plan-icon" style="background:#FEF3C7; color:#F59E0B;"><i class="fas fa-award"></i></div>
+                                <h4>ICICI Lombard PA</h4>
+                                <p>₹50L cover<br>₹120/month</p>
+                            </div>
+                            <div class="plan-card">
+                                <div class="plan-icon" style="background:#ECFDF5; color:#10B981;"><i class="fas fa-crown"></i></div>
+                                <h4>Bajaj Allianz PA Guard</h4>
+                                <p>₹75L cover<br>₹135/month</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="faq-section" style="margin-top:50px;">
+                        <h2 style="font-size:1.6rem; font-weight:800; color:#1E293B; margin-bottom:20px;"><i class="fas fa-question-circle" style="color:#DC2626;"></i> FAQs</h2>
+                        <details class="faq-item"><summary>Is PA insurance different from health insurance?</summary><div class="faq-body">Yes. Health insurance covers hospitalization due to illness and accidents, while PA insurance specifically covers accidental death, disability, and related expenses. Both complement each other and are recommended together.</div></details>
+                        <details class="faq-item"><summary>Does PA insurance cover road accidents?</summary><div class="faq-body">Yes, PA insurance covers all types of accidents including road accidents, falls, burns, drowning, animal bites, and any bodily injury caused by external, violent, and visible means.</div></details>
+                        <details class="faq-item"><summary>Can I buy PA insurance for my family?</summary><div class="faq-body">Yes, most insurers offer family PA plans that can cover you, your spouse, children, and parents under a single policy at a discounted premium.</div></details>
+                    </div>
+                </div>
+                <div>
+                    <div class="sidebar-card">
+                        <h3>Get PA Insurance Quote</h3>
+                        <div class="price-tag">₹150 <span>/month onwards</span></div>
+                        <p style="color:#64748B; font-size:0.9rem; margin:12px 0;">₹1 Cr accident cover | Worldwide</p>
+                        <div style="background:#FEF2F2; padding:12px; border-radius:10px; margin:16px 0;">
+                            <p style="color:#991B1B; font-size:0.85rem; margin:0;"><i class="fas fa-user-shield"></i> <strong>Complete:</strong> Death + Disability + Medical expenses</p>
+                        </div>
+                        <form onsubmit="event.preventDefault(); alert('Thank you! Our advisor will call you with PA insurance plan options.');">
+                            <input type="text" placeholder="Full Name" required style="width:100%; padding:12px; border:1px solid #E2E8F0; border-radius:10px; margin-bottom:10px; font-family:inherit;">
+                            <input type="tel" placeholder="Mobile Number" required maxlength="10" style="width:100%; padding:12px; border:1px solid #E2E8F0; border-radius:10px; margin-bottom:10px; font-family:inherit;">
+                            <button type="submit" class="cta-btn"><i class="fas fa-bolt"></i> Get Free Quote</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <footer class="footer"><div class="container"><div class="footer-bottom"><div class="footer-legal"><p>Insurix India Insurance Brokers Private Limited | CIN: U74999HR2014PTC053454</p><p>IRDAI License No. 742 | Composite Broker | Valid till: 09/06/2027</p></div></div></div></footer>
+</body>
+</html>

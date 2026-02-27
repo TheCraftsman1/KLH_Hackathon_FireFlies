@@ -295,16 +295,21 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // ===== ALSO BUY TAG HOVER EFFECT =====
+    // ===== ALSO BUY TAG CLICK — navigate to linked page =====
     document.querySelectorAll('.also-buy-tag').forEach(function(tag) {
         tag.addEventListener('click', function(e) {
-            e.preventDefault();
-            showNotification('Exploring ' + this.textContent.trim() + '...');
+            var href = this.getAttribute('href');
+            if (!href || href === '#') {
+                e.preventDefault();
+                showNotification('Exploring ' + this.textContent.trim() + '...');
+            }
+            // If href is a real page, let the browser navigate normally
         });
     });
 
     // ===== CALCULATOR LINKS =====
-    document.querySelectorAll('.calc-list a').forEach(function(link) {
+    // Handled by calculators.js via data-calculator attributes
+    document.querySelectorAll('.calc-list a:not([data-calculator])').forEach(function(link) {
         link.addEventListener('click', function(e) {
             e.preventDefault();
             showNotification('Opening ' + this.textContent.trim() + '...');

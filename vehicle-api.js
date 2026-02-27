@@ -39,9 +39,11 @@ const VehicleAPI = (() => {
 
     /**
      * Lookup vehicle by registration number (e.g., "MH 02 AB 1234")
+     * @param {string} regNumber - Vehicle registration number
+     * @param {string} [vehicleType] - Optional: '4W' for cars, '2W' for two-wheelers
      * Returns: vehicle details, IDV, premiums, and insurance quotes
      */
-    async function fetchVehicleDataRealTime(regNumber) {
+    async function fetchVehicleDataRealTime(regNumber, vehicleType) {
         const clean = regNumber.replace(/\s/g, '').toUpperCase();
         
         if (clean.length < 8) {
@@ -49,10 +51,13 @@ const VehicleAPI = (() => {
         }
 
         try {
+            const bodyData = { registrationNumber: clean };
+            if (vehicleType) bodyData.vehicleType = vehicleType;
+            
             const result = await safeJsonFetch(`${API_BASE}/api/vehicle/lookup`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ registrationNumber: clean })
+                body: JSON.stringify(bodyData)
             });
             
             if (!result.success) {

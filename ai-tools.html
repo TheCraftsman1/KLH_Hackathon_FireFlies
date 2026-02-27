@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Differentiators — Insurix.India</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="ai-tools.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="index.html" class="logo">
+                    <span class="logo-policy">Insurix</span><span class="logo-dot">.</span><span class="logo-bazaar">India</span>
+                </a>
+                <nav class="ait-nav">
+                    <a href="index.html"><i class="fas fa-home"></i> Home</a>
+                    <a href="negotiation.html"><i class="fas fa-handshake"></i> Negotiate</a>
+                    <a href="dashboard.html"><i class="fas fa-chart-line"></i> InsurGuard</a>
+                    <a href="ai-tools.html" class="active"><i class="fas fa-wand-magic-sparkles"></i> AI Tools</a>
+                    <a href="voice-assistant.html"><i class="fas fa-microphone"></i> Voice AI</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- ===== HERO ===== -->
+    <section class="ait-hero">
+        <div class="ait-hero-bg">
+            <div class="ait-hero-orb ait-hero-orb-1"></div>
+            <div class="ait-hero-orb ait-hero-orb-2"></div>
+            <div class="ait-hero-grid"></div>
+        </div>
+        <div class="container ait-hero-content">
+            <div class="ait-hero-badge"><i class="fas fa-wand-magic-sparkles"></i> AI-Powered Differentiators</div>
+            <h1 class="ait-hero-title">See What <span class="ait-gradient-text">Others Hide</span></h1>
+            <p class="ait-hero-sub">Decode policy fine-print, expose commission leakage, and predict your renewal costs — powered by IRDAI data + AI</p>
+        </div>
+    </section>
+
+    <!-- ===== TABS ===== -->
+    <div class="container">
+        <div class="ait-tabs">
+            <button class="ait-tab active" data-tab="decoder" onclick="switchTab('decoder')">
+                <i class="fas fa-file-shield"></i> Policy Decoder
+            </button>
+            <button class="ait-tab" data-tab="commission" onclick="switchTab('commission')">
+                <i class="fas fa-coins"></i> Commission Tracker
+            </button>
+            <button class="ait-tab" data-tab="oracle" onclick="switchTab('oracle')">
+                <i class="fas fa-crystal-ball"></i> Renewal Oracle
+            </button>
+        </div>
+    </div>
+
+    <!-- ================================================================ -->
+    <!-- TAB 1: POLICY DECODER                                           -->
+    <!-- ================================================================ -->
+    <section class="ait-section" id="tab-decoder">
+        <div class="container">
+            <div class="ait-tool-header">
+                <div class="ait-tool-icon" style="background:linear-gradient(135deg,#6366F1,#8B5CF6)"><i class="fas fa-file-shield"></i></div>
+                <div>
+                    <h2>Policy Decoder <span class="ait-badge-sm">AI-Powered</span></h2>
+                    <p>Instantly decode any insurance policy into plain language with Red/Yellow/Green risk flags</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="ait-card ait-decoder-input">
+                <div class="ait-input-group">
+                    <label>Policy Type</label>
+                    <select id="decoderPolicyType">
+                        <option value="motor_comprehensive">Motor — Comprehensive</option>
+                        <option value="health_individual">Health — Individual</option>
+                        <option value="term_life">Term Life Insurance</option>
+                    </select>
+                </div>
+                <div class="ait-input-group">
+                    <label>Insurer (Optional)</label>
+                    <select id="decoderInsurer">
+                        <option value="">All Insurers (Generic)</option>
+                        <option value="hdfc">HDFC ERGO</option>
+                        <option value="icici">ICICI Lombard</option>
+                        <option value="bajaj">Bajaj Allianz</option>
+                        <option value="tata">Tata AIG</option>
+                        <option value="sbi">SBI General</option>
+                        <option value="max">Max Life</option>
+                    </select>
+                </div>
+                <div class="ait-input-group ait-full-width">
+                    <label>Paste Policy Text (Optional — AI will analyze)</label>
+                    <textarea id="decoderText" rows="3" placeholder="Paste your policy document text here for AI-powered deep analysis..."></textarea>
+                </div>
+
+                <!-- FILE UPLOAD ZONE -->
+                <div class="ait-input-group ait-full-width">
+                    <label><i class="fas fa-cloud-arrow-up"></i> Upload Policy Document (PDF, DOCX, TXT)</label>
+                    <div class="ait-upload-zone" id="uploadZone">
+                        <input type="file" id="policyFileInput" accept=".pdf,.docx,.doc,.txt" style="display:none">
+                        <div class="ait-upload-idle" id="uploadIdle">
+                            <div class="ait-upload-icon">
+                                <i class="fas fa-file-pdf"></i>
+                                <i class="fas fa-file-word"></i>
+                                <i class="fas fa-file-lines"></i>
+                            </div>
+                            <p class="ait-upload-main">Drag & drop your policy file here</p>
+                            <p class="ait-upload-sub">or <span class="ait-upload-browse" id="uploadBrowseBtn">browse files</span></p>
+                            <p class="ait-upload-hint">Supports PDF, DOCX, TXT • Max 10MB</p>
+                        </div>
+                        <div class="ait-upload-selected" id="uploadSelected" style="display:none">
+                            <div class="ait-upload-file-info">
+                                <i class="fas fa-file-circle-check ait-upload-file-icon"></i>
+                                <div>
+                                    <p class="ait-upload-filename" id="uploadFileName"></p>
+                                    <p class="ait-upload-filesize" id="uploadFileSize"></p>
+                                </div>
+                                <button class="ait-upload-remove" id="uploadRemoveBtn" title="Remove file"><i class="fas fa-xmark"></i></button>
+                            </div>
+                        </div>
+                        <div class="ait-upload-progress" id="uploadProgress" style="display:none">
+                            <div class="ait-upload-progress-bar">
+                                <div class="ait-upload-progress-fill" id="uploadProgressFill"></div>
+                            </div>
+                            <p class="ait-upload-progress-text" id="uploadProgressText">Extracting text...</p>
+                        </div>
+                    </div>
+                </div>
+                <button class="ait-btn-primary ait-btn-upload" id="btnUploadDecode" onclick="uploadAndDecode()" style="display:none">
+                    <i class="fas fa-cloud-arrow-up"></i> Upload & Decode with AI
+                </button>
+                <div class="ait-upload-divider">
+                    <span>OR use quick demos</span>
+                </div>
+                <div class="ait-demo-row">
+                    <span class="ait-demo-label">Quick Demo:</span>
+                    <button class="ait-demo-chip" onclick="decoderDemo('motor_comprehensive','hdfc')"><i class="fas fa-car"></i> HDFC Motor</button>
+                    <button class="ait-demo-chip" onclick="decoderDemo('health_individual','icici')"><i class="fas fa-heart-pulse"></i> ICICI Health</button>
+                    <button class="ait-demo-chip" onclick="decoderDemo('term_life','max')"><i class="fas fa-shield-heart"></i> Max Term Life</button>
+                    <button class="ait-demo-chip" onclick="decoderDemo('health_individual','sbi')"><i class="fas fa-building-columns"></i> SBI Health</button>
+                </div>
+                <button class="ait-btn-primary" id="btnDecodePolicy" onclick="decodePolicy()">
+                    <i class="fas fa-wand-magic-sparkles"></i> Decode Policy
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div id="decoderResults" class="ait-results" style="display:none">
+                <!-- Fairness Score Card -->
+                <div class="ait-fairness-card" id="fairnessCard">
+                    <div class="ait-fairness-gauge">
+                        <svg viewBox="0 0 120 120" class="ait-gauge-svg">
+                            <circle cx="60" cy="60" r="52" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="8"/>
+                            <circle cx="60" cy="60" r="52" fill="none" stroke-width="8" stroke-linecap="round"
+                                id="fairnessArc" class="ait-gauge-arc"
+                                stroke-dasharray="327" stroke-dashoffset="327"/>
+                        </svg>
+                        <div class="ait-gauge-value" id="fairnessValue">0</div>
+                    </div>
+                    <div class="ait-fairness-info">
+                        <h3>Fairness Score</h3>
+                        <p id="fairnessVerdict"></p>
+                        <div class="ait-clause-counts" id="clauseCounts"></div>
+                    </div>
+                </div>
+
+                <!-- TL;DR -->
+                <div class="ait-card ait-tldr-card">
+                    <h3><i class="fas fa-bolt"></i> TL;DR</h3>
+                    <p id="tldrText"></p>
+                </div>
+
+                <!-- AI Analysis (if available) -->
+                <div class="ait-card ait-ai-analysis" id="aiAnalysisCard" style="display:none">
+                    <h3><i class="fas fa-robot"></i> AI Deep Analysis</h3>
+                    <div id="aiRedFlags"></div>
+                    <div id="aiGreenFlags"></div>
+                </div>
+
+                <!-- Clause List -->
+                <div class="ait-card">
+                    <h3><i class="fas fa-list-check"></i> All Clauses Decoded</h3>
+                    <div id="clauseList" class="ait-clause-list"></div>
+                </div>
+
+                <!-- Insurer-Specific -->
+                <div class="ait-card" id="insurerSpecificCard" style="display:none">
+                    <h3><i class="fas fa-building"></i> <span id="insurerSpecificTitle"></span> — Specific Details</h3>
+                    <div id="insurerSpecificDetails" class="ait-insurer-grid"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- TAB 2: COMMISSION TRACKER                                       -->
+    <!-- ================================================================ -->
+    <section class="ait-section" id="tab-commission" style="display:none">
+        <div class="container">
+            <div class="ait-tool-header">
+                <div class="ait-tool-icon" style="background:linear-gradient(135deg,#F59E0B,#EF4444)"><i class="fas fa-coins"></i></div>
+                <div>
+                    <h2>Commission Leakage Tracker <span class="ait-badge-sm">IRDAI Data</span></h2>
+                    <p>See exactly how much of your premium goes to agent commissions vs. actual coverage</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="ait-card ait-commission-input">
+                <div class="ait-input-group">
+                    <label>Insurance Product</label>
+                    <select id="commProductType">
+                        <option value="motor">Motor Insurance</option>
+                        <option value="health">Health Insurance</option>
+                        <option value="life_term">Term Life Insurance</option>
+                    </select>
+                </div>
+                <div class="ait-input-group">
+                    <label>Annual Premium (₹)</label>
+                    <input type="number" id="commPremium" value="10000" min="500" max="500000">
+                </div>
+                <div class="ait-input-group">
+                    <label>Your Insurer (Optional)</label>
+                    <select id="commInsurer">
+                        <option value="">All Insurers</option>
+                        <option value="hdfc">HDFC ERGO</option>
+                        <option value="icici">ICICI Lombard</option>
+                        <option value="bajaj">Bajaj Allianz</option>
+                        <option value="tata">Tata AIG</option>
+                        <option value="sbi">SBI General</option>
+                        <option value="max">Max Life</option>
+                    </select>
+                </div>
+                <div class="ait-demo-row">
+                    <span class="ait-demo-label">Quick Demo:</span>
+                    <button class="ait-demo-chip" onclick="commDemo('motor',15000,'hdfc')"><i class="fas fa-car"></i> Motor ₹15K</button>
+                    <button class="ait-demo-chip" onclick="commDemo('health',25000,'icici')"><i class="fas fa-heart-pulse"></i> Health ₹25K</button>
+                    <button class="ait-demo-chip" onclick="commDemo('life_term',12000,'max')"><i class="fas fa-shield-heart"></i> Term ₹12K</button>
+                </div>
+                <button class="ait-btn-primary" onclick="analyzeCommission()">
+                    <i class="fas fa-search-dollar"></i> Analyze Commission
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div id="commissionResults" class="ait-results" style="display:none">
+                <!-- Savings Banner -->
+                <div class="ait-savings-banner" id="commSavingsBanner">
+                    <div class="ait-savings-left">
+                        <i class="fas fa-piggy-bank"></i>
+                        <div>
+                            <h3>Potential Savings by Going Direct</h3>
+                            <p id="commSavingsDesc"></p>
+                        </div>
+                    </div>
+                    <div class="ait-savings-amount" id="commSavingsAmt">₹0</div>
+                </div>
+
+                <!-- Pie Charts -->
+                <div class="ait-pie-row">
+                    <div class="ait-card ait-pie-card">
+                        <h4>Agent Channel</h4>
+                        <canvas id="pieAgent" width="200" height="200"></canvas>
+                        <p class="ait-pie-label" id="pieAgentLabel"></p>
+                    </div>
+                    <div class="ait-card ait-pie-card">
+                        <h4>Direct Digital</h4>
+                        <canvas id="pieDirect" width="200" height="200"></canvas>
+                        <p class="ait-pie-label" id="pieDirectLabel"></p>
+                    </div>
+                </div>
+
+                <!-- Channel Breakdown Table -->
+                <div class="ait-card">
+                    <h3><i class="fas fa-table"></i> Channel-wise Breakdown</h3>
+                    <div class="ait-table-wrap">
+                        <table class="ait-table" id="channelTable">
+                            <thead>
+                                <tr>
+                                    <th>Channel</th>
+                                    <th>Commission</th>
+                                    <th>Operating Cost</th>
+                                    <th>Total Dist. Cost</th>
+                                    <th>Goes to Coverage</th>
+                                </tr>
+                            </thead>
+                            <tbody id="channelTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Per-Insurer Comparison -->
+                <div class="ait-card">
+                    <h3><i class="fas fa-building-columns"></i> Per-Insurer Commission Comparison</h3>
+                    <div id="insurerCommGrid" class="ait-insurer-comm-grid"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ================================================================ -->
+    <!-- TAB 3: RENEWAL ORACLE                                           -->
+    <!-- ================================================================ -->
+    <section class="ait-section" id="tab-oracle" style="display:none">
+        <div class="container">
+            <div class="ait-tool-header">
+                <div class="ait-tool-icon" style="background:linear-gradient(135deg,#0D9488,#06B6D4)"><i class="fas fa-eye"></i></div>
+                <div>
+                    <h2>Renewal Oracle <span class="ait-badge-sm">Predictive</span></h2>
+                    <p>Predict your next 3 years of insurance costs + get proactive switch alerts</p>
+                </div>
+            </div>
+
+            <!-- Input -->
+            <div class="ait-card ait-oracle-input">
+                <div class="ait-input-group">
+                    <label>Vehicle Registration Number</label>
+                    <input type="text" id="oracleRegInput" placeholder="e.g. TS08JM2665" style="text-transform:uppercase; letter-spacing:1.5px; font-weight:600">
+                </div>
+                <div class="ait-input-group">
+                    <label>Current Annual Premium (₹)</label>
+                    <input type="number" id="oraclePremium" placeholder="e.g. 2000" min="500">
+                </div>
+                <div class="ait-input-group">
+                    <label>Current Insurer</label>
+                    <select id="oracleInsurer">
+                        <option value="">Select Insurer</option>
+                        <option value="hdfc">HDFC ERGO</option>
+                        <option value="icici">ICICI Lombard</option>
+                        <option value="bajaj">Bajaj Allianz</option>
+                        <option value="tata">Tata AIG</option>
+                        <option value="sbi">SBI General</option>
+                        <option value="max">Max Life</option>
+                    </select>
+                </div>
+                <div class="ait-input-group">
+                    <label>Your Age</label>
+                    <input type="number" id="oracleAge" value="30" min="18" max="80">
+                </div>
+                <div class="ait-demo-row">
+                    <span class="ait-demo-label">Quick Demo:</span>
+                    <button class="ait-demo-chip" onclick="oracleDemo('TS08JM2665',2000,'icici')"><i class="fas fa-motorcycle"></i> TS08JM2665</button>
+                    <button class="ait-demo-chip" onclick="oracleDemo('TS09EA4321',18000,'hdfc')"><i class="fas fa-car"></i> TS09EA4321</button>
+                    <button class="ait-demo-chip" onclick="oracleDemo('KA01MH7890',14000,'tata')"><i class="fas fa-car"></i> KA01MH7890</button>
+                </div>
+                <button class="ait-btn-primary" onclick="runOracle()">
+                    <i class="fas fa-eye"></i> Predict Renewal Costs
+                </button>
+            </div>
+
+            <!-- Results -->
+            <div id="oracleResults" class="ait-results" style="display:none">
+                <!-- Alerts -->
+                <div id="oracleAlerts" class="ait-alerts-container"></div>
+
+                <!-- Forecast Table -->
+                <div class="ait-card">
+                    <h3><i class="fas fa-chart-line"></i> 3-Year Premium Forecast</h3>
+                    <div style="height:280px; margin-bottom:20px">
+                        <canvas id="forecastChart"></canvas>
+                    </div>
+                    <div class="ait-table-wrap">
+                        <table class="ait-table" id="forecastTable">
+                            <thead>
+                                <tr>
+                                    <th>Year</th>
+                                    <th>Vehicle Age</th>
+                                    <th>IDV</th>
+                                    <th>TP Premium</th>
+                                    <th>OD Premium</th>
+                                    <th>Total</th>
+                                    <th>Change</th>
+                                </tr>
+                            </thead>
+                            <tbody id="forecastTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Top Insurer Recommendations -->
+                <div class="ait-card">
+                    <h3><i class="fas fa-trophy"></i> Top Insurer Recommendations</h3>
+                    <div id="topInsurersGrid" class="ait-top-insurers-grid"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== FOOTER ===== -->
+    <footer class="ait-footer">
+        <div class="container">
+            <div class="ait-footer-inner">
+                <div class="ait-footer-brand">
+                    <div class="ait-footer-logo">Insurix<span>.India</span></div>
+                    <p>AI-powered insurance intelligence</p>
+                </div>
+                <div class="ait-footer-links">
+                    <a href="index.html">Home</a>
+                    <a href="negotiation.html">Negotiate</a>
+                    <a href="dashboard.html">InsurGuard</a>
+                    <a href="voice-assistant.html">Voice AI</a>
+                </div>
+                <div class="ait-footer-copy">© 2026 Insurix.India — KLH Hackathon by Team FireFlies</div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="ai-tools.js"></script>
+</body>
+</html>

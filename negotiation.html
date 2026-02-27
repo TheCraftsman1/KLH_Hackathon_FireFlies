@@ -162,6 +162,79 @@
         </div>
     </section>
 
+    <!-- ===== AI CLASSIFIED POLICIES SECTION ===== -->
+    <section class="neg-policies-section" id="policiesSection">
+        <div class="container">
+            <div class="neg-policies-header">
+                <h2><i class="fas fa-robot"></i> Real-Time Indian Insurance Policies</h2>
+                <p>AI-classified policies from top Indian insurers</p>
+            </div>
+            
+            <!-- Category Tabs -->
+            <div class="neg-policy-tabs">
+                <button class="neg-policy-tab active" data-category="all">All Policies</button>
+                <button class="neg-policy-tab" data-category="motor">Motor</button>
+                <button class="neg-policy-tab" data-category="health">Health</button>
+                <button class="neg-policy-tab" data-category="life">Life</button>
+                <button class="neg-policy-tab" data-category="travel">Travel</button>
+                <button class="neg-policy-tab" data-category="home">Home</button>
+            </div>
+            
+            <!-- AI Analysis Box -->
+            <div class="neg-ai-analysis" id="aiAnalysis">
+                <div class="neg-ai-icon"><i class="fas fa-brain"></i></div>
+                <div class="neg-ai-text">
+                    <h4>AI Analysis</h4>
+                    <p id="aiAnalysisText">Click a category to get AI-classified policy recommendations...</p>
+                </div>
+            </div>
+            
+            <!-- Classification Cards -->
+            <div class="neg-classification-grid">
+                <div class="neg-class-card">
+                    <div class="neg-class-header">
+                        <i class="fas fa-star"></i> Best Value
+                    </div>
+                    <div class="neg-class-policies" id="bestValuePolicies">
+                        <p class="neg-class-empty">Select a category to view</p>
+                    </div>
+                </div>
+                <div class="neg-class-card">
+                    <div class="neg-class-header">
+                        <i class="fas fa-shield-alt"></i> Best Coverage
+                    </div>
+                    <div class="neg-class-policies" id="bestCoveragePolicies">
+                        <p class="neg-class-empty">Select a category to view</p>
+                    </div>
+                </div>
+                <div class="neg-class-card">
+                    <div class="neg-class-header">
+                        <i class="fas fa-check-circle"></i> Best Claims
+                    </div>
+                    <div class="neg-class-policies" id="bestClaimsPolicies">
+                        <p class="neg-class-empty">Select a category to view</p>
+                    </div>
+                </div>
+                <div class="neg-class-card">
+                    <div class="neg-class-header">
+                        <i class="fas fa-trophy"></i> Top Rated
+                    </div>
+                    <div class="neg-class-policies" id="topRatedPolicies">
+                        <p class="neg-class-empty">Select a category to view</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Full Policy List -->
+            <div class="neg-policy-list" id="policyList">
+                <h3>All Available Policies</h3>
+                <div class="neg-policy-list-inner" id="policyListInner">
+                    <p class="neg-class-empty">Select a category to view all policies</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <!-- ===== ACCEPTED BANNER ===== -->
     <div class="neg-accepted" id="acceptedBanner">
         <div class="container">

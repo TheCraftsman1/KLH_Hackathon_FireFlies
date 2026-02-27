@@ -2,7 +2,21 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const path = require('path');
+const multer = require('multer');
+const pdfParse = require('pdf-parse');
+const mammoth = require('mammoth');
 require('dotenv').config();
+
+// Multer config — memory storage, 10MB limit
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+        const allowed = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain'];
+        if (allowed.includes(file.mimetype)) cb(null, true);
+        else cb(new Error('Only PDF, DOCX, DOC, and TXT files are allowed'));
+    }
+});
 
 const app = express();
 const PORT = 3000;
@@ -200,6 +214,250 @@ const BRAND_POPULARITY = {
     'AS': ['Hero', 'Honda', 'TVS', 'Bajaj']
 };
 
+// ===== CAR (4W) DATABASE =====
+const CAR_DATABASE = {
+    'Maruti Suzuki': {
+        'Alto K10': { cc: 998, price: 399000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'S-Presso': { cc: 998, price: 425000, type: '4W', segment: 'Micro SUV', fuel: 'Petrol' },
+        'Celerio': { cc: 998, price: 540000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'WagonR': { cc: 1197, price: 574000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Swift': { cc: 1197, price: 699000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Dzire': { cc: 1197, price: 689000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Baleno': { cc: 1197, price: 674000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Ignis': { cc: 1197, price: 564000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Ciaz': { cc: 1462, price: 940000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Ertiga': { cc: 1462, price: 865000, type: '4W', segment: 'MPV', fuel: 'Petrol' },
+        'XL6': { cc: 1462, price: 1139000, type: '4W', segment: 'MPV', fuel: 'Petrol' },
+        'Brezza': { cc: 1462, price: 849000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Grand Vitara': { cc: 1462, price: 1099000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Fronx': { cc: 1197, price: 774000, type: '4W', segment: 'SUV Coupe', fuel: 'Petrol' },
+        'Jimny': { cc: 1462, price: 1274000, type: '4W', segment: 'Off-Road SUV', fuel: 'Petrol' },
+        'Invicto': { cc: 1987, price: 2560000, type: '4W', segment: 'MPV', fuel: 'Hybrid' },
+        'Eeco': { cc: 1196, price: 527000, type: '4W', segment: 'Van', fuel: 'Petrol' }
+    },
+    'Hyundai': {
+        'Grand i10 Nios': { cc: 1197, price: 570000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'i20': { cc: 1197, price: 730000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'i20 N Line': { cc: 1482, price: 1050000, type: '4W', segment: 'Hot Hatch', fuel: 'Petrol' },
+        'Aura': { cc: 1197, price: 660000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Verna': { cc: 1497, price: 1098000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Venue': { cc: 1197, price: 775000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Venue N Line': { cc: 1482, price: 1232000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Creta': { cc: 1497, price: 1100000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Creta N Line': { cc: 1482, price: 1650000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Alcazar': { cc: 1497, price: 1700000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Tucson': { cc: 1999, price: 2875000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Exter': { cc: 1197, price: 600000, type: '4W', segment: 'Micro SUV', fuel: 'Petrol' },
+        'Ioniq 5': { cc: 0, price: 4495000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' }
+    },
+    'Tata': {
+        'Tiago': { cc: 1199, price: 550000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Tiago EV': { cc: 0, price: 849000, type: '4W', segment: 'Electric Hatchback', fuel: 'Electric' },
+        'Tigor': { cc: 1199, price: 600000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Tigor EV': { cc: 0, price: 1249000, type: '4W', segment: 'Electric Sedan', fuel: 'Electric' },
+        'Altroz': { cc: 1199, price: 680000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Punch': { cc: 1199, price: 610000, type: '4W', segment: 'Micro SUV', fuel: 'Petrol' },
+        'Punch EV': { cc: 0, price: 1099000, type: '4W', segment: 'Electric Micro SUV', fuel: 'Electric' },
+        'Nexon': { cc: 1199, price: 850000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Nexon EV': { cc: 0, price: 1499000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' },
+        'Harrier': { cc: 1956, price: 1520000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Safari': { cc: 1956, price: 1620000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Curvv': { cc: 1497, price: 1000000, type: '4W', segment: 'SUV Coupe', fuel: 'Petrol' },
+        'Curvv EV': { cc: 0, price: 1749000, type: '4W', segment: 'Electric SUV Coupe', fuel: 'Electric' }
+    },
+    'Mahindra': {
+        'Bolero': { cc: 1493, price: 950000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Bolero Neo': { cc: 1493, price: 940000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Scorpio N': { cc: 1997, price: 1399000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Scorpio Classic': { cc: 2179, price: 1390000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'XUV300': { cc: 1497, price: 850000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'XUV400 EV': { cc: 0, price: 1599000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' },
+        'XUV700': { cc: 1997, price: 1399000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Thar': { cc: 1997, price: 1100000, type: '4W', segment: 'Off-Road SUV', fuel: 'Petrol' },
+        'Thar ROXX': { cc: 1997, price: 1299000, type: '4W', segment: 'Off-Road SUV', fuel: 'Diesel' },
+        'Marazzo': { cc: 1497, price: 1250000, type: '4W', segment: 'MPV', fuel: 'Diesel' },
+        'BE 6': { cc: 0, price: 1899000, type: '4W', segment: 'Electric SUV Coupe', fuel: 'Electric' },
+        'XEV 9e': { cc: 0, price: 2199000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' }
+    },
+    'Kia': {
+        'Seltos': { cc: 1497, price: 1100000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Sonet': { cc: 1197, price: 799000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Carens': { cc: 1497, price: 1070000, type: '4W', segment: 'MPV', fuel: 'Petrol' },
+        'EV6': { cc: 0, price: 6095000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' },
+        'EV9': { cc: 0, price: 7500000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' }
+    },
+    'Toyota': {
+        'Glanza': { cc: 1197, price: 674000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Urban Cruiser Taisor': { cc: 1197, price: 774000, type: '4W', segment: 'SUV Coupe', fuel: 'Petrol' },
+        'Rumion': { cc: 1462, price: 1100000, type: '4W', segment: 'MPV', fuel: 'Petrol' },
+        'Urban Cruiser Hyryder': { cc: 1462, price: 1100000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Innova Crysta': { cc: 2393, price: 1997000, type: '4W', segment: 'MPV', fuel: 'Diesel' },
+        'Innova Hycross': { cc: 1987, price: 1993000, type: '4W', segment: 'MPV', fuel: 'Hybrid' },
+        'Fortuner': { cc: 2755, price: 3490000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Fortuner Legender': { cc: 2755, price: 4010000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Hilux': { cc: 2755, price: 3050000, type: '4W', segment: 'Pickup', fuel: 'Diesel' },
+        'Camry': { cc: 2487, price: 4800000, type: '4W', segment: 'Sedan', fuel: 'Hybrid' },
+        'Vellfire': { cc: 2494, price: 12000000, type: '4W', segment: 'Luxury MPV', fuel: 'Hybrid' },
+        'Land Cruiser': { cc: 3346, price: 21000000, type: '4W', segment: 'Luxury SUV', fuel: 'Diesel' }
+    },
+    'Honda Cars': {
+        'Amaze': { cc: 1199, price: 750000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'City': { cc: 1498, price: 1190000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'City e:HEV': { cc: 1498, price: 1950000, type: '4W', segment: 'Sedan', fuel: 'Hybrid' },
+        'Elevate': { cc: 1498, price: 1110000, type: '4W', segment: 'SUV', fuel: 'Petrol' }
+    },
+    'Volkswagen': {
+        'Polo': { cc: 999, price: 680000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Virtus': { cc: 999, price: 1190000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Taigun': { cc: 999, price: 1170000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Tiguan': { cc: 1984, price: 3570000, type: '4W', segment: 'SUV', fuel: 'Petrol' }
+    },
+    'Skoda': {
+        'Slavia': { cc: 999, price: 1100000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'Kushaq': { cc: 999, price: 1100000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Kodiaq': { cc: 1984, price: 4050000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Superb': { cc: 1984, price: 5400000, type: '4W', segment: 'Sedan', fuel: 'Petrol' }
+    },
+    'MG': {
+        'Comet EV': { cc: 0, price: 799000, type: '4W', segment: 'Electric Micro', fuel: 'Electric' },
+        'Astor': { cc: 1498, price: 1098000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Hector': { cc: 1451, price: 1450000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Hector Plus': { cc: 1451, price: 1700000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Gloster': { cc: 1996, price: 3890000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'ZS EV': { cc: 0, price: 1898000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' },
+        'Windsor EV': { cc: 0, price: 1399000, type: '4W', segment: 'Electric MPV', fuel: 'Electric' }
+    },
+    'Renault': {
+        'Kwid': { cc: 999, price: 468000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Triber': { cc: 999, price: 600000, type: '4W', segment: 'MPV', fuel: 'Petrol' },
+        'Kiger': { cc: 999, price: 600000, type: '4W', segment: 'SUV', fuel: 'Petrol' }
+    },
+    'Nissan': {
+        'Magnite': { cc: 999, price: 600000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'X-Trail': { cc: 1497, price: 4990000, type: '4W', segment: 'SUV', fuel: 'Hybrid' }
+    },
+    'Jeep': {
+        'Compass': { cc: 1956, price: 2070000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Meridian': { cc: 1956, price: 3370000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Grand Cherokee': { cc: 1995, price: 7895000, type: '4W', segment: 'Luxury SUV', fuel: 'Petrol' },
+        'Wrangler': { cc: 1995, price: 5715000, type: '4W', segment: 'Off-Road SUV', fuel: 'Petrol' }
+    },
+    'Citroen': {
+        'C3': { cc: 1199, price: 630000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'C3 Aircross': { cc: 1199, price: 1000000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'eC3': { cc: 0, price: 1175000, type: '4W', segment: 'Electric Hatchback', fuel: 'Electric' },
+        'Basalt': { cc: 1199, price: 800000, type: '4W', segment: 'SUV Coupe', fuel: 'Petrol' }
+    },
+    'BMW': {
+        '2 Series Gran Coupe': { cc: 1998, price: 3950000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        '3 Series': { cc: 1998, price: 4690000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        '5 Series': { cc: 1998, price: 7290000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        '7 Series': { cc: 2998, price: 17500000, type: '4W', segment: 'Luxury Sedan', fuel: 'Petrol' },
+        'X1': { cc: 1499, price: 4610000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'X3': { cc: 1998, price: 6600000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'X5': { cc: 2993, price: 9300000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'iX1': { cc: 0, price: 6700000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' }
+    },
+    'Mercedes-Benz': {
+        'A-Class Limousine': { cc: 1332, price: 4500000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'C-Class': { cc: 1496, price: 5500000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'E-Class': { cc: 1991, price: 7900000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'S-Class': { cc: 2999, price: 16000000, type: '4W', segment: 'Luxury Sedan', fuel: 'Petrol' },
+        'GLA': { cc: 1332, price: 5000000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'GLC': { cc: 1991, price: 7300000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'GLE': { cc: 2925, price: 9700000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'GLS': { cc: 2925, price: 13000000, type: '4W', segment: 'Luxury SUV', fuel: 'Diesel' },
+        'EQS': { cc: 0, price: 18500000, type: '4W', segment: 'Electric Sedan', fuel: 'Electric' }
+    },
+    'Audi': {
+        'A4': { cc: 1984, price: 4600000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'A6': { cc: 1984, price: 6500000, type: '4W', segment: 'Sedan', fuel: 'Petrol' },
+        'A8': { cc: 2995, price: 18000000, type: '4W', segment: 'Luxury Sedan', fuel: 'Petrol' },
+        'Q3': { cc: 1984, price: 4400000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Q5': { cc: 1984, price: 6780000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Q7': { cc: 2967, price: 8700000, type: '4W', segment: 'SUV', fuel: 'Diesel' },
+        'Q8': { cc: 2995, price: 11300000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'e-tron GT': { cc: 0, price: 18000000, type: '4W', segment: 'Electric Sedan', fuel: 'Electric' }
+    },
+    'Volvo': {
+        'XC40': { cc: 1969, price: 4690000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'XC40 Recharge': { cc: 0, price: 5775000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' },
+        'XC60': { cc: 1969, price: 6850000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'XC90': { cc: 1969, price: 9200000, type: '4W', segment: 'Luxury SUV', fuel: 'Petrol' },
+        'S90': { cc: 1969, price: 7200000, type: '4W', segment: 'Sedan', fuel: 'Petrol' }
+    },
+    'Land Rover': {
+        'Defender': { cc: 1997, price: 9720000, type: '4W', segment: 'Off-Road SUV', fuel: 'Petrol' },
+        'Discovery Sport': { cc: 1999, price: 7000000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Range Rover Evoque': { cc: 1998, price: 7000000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Range Rover Velar': { cc: 1997, price: 8100000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Range Rover Sport': { cc: 2996, price: 16000000, type: '4W', segment: 'Luxury SUV', fuel: 'Petrol' },
+        'Range Rover': { cc: 2996, price: 25000000, type: '4W', segment: 'Luxury SUV', fuel: 'Petrol' }
+    },
+    'Porsche': {
+        'Macan': { cc: 1984, price: 8390000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Cayenne': { cc: 2995, price: 13500000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Taycan': { cc: 0, price: 15000000, type: '4W', segment: 'Electric Sedan', fuel: 'Electric' },
+        '911': { cc: 2981, price: 18000000, type: '4W', segment: 'Sports Car', fuel: 'Petrol' }
+    },
+    'BYD': {
+        'Atto 3': { cc: 0, price: 3399000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' },
+        'Seal': { cc: 0, price: 4199000, type: '4W', segment: 'Electric Sedan', fuel: 'Electric' },
+        'e6': { cc: 0, price: 2999000, type: '4W', segment: 'Electric MPV', fuel: 'Electric' }
+    },
+    'MINI': {
+        'Cooper': { cc: 1499, price: 4000000, type: '4W', segment: 'Hatchback', fuel: 'Petrol' },
+        'Countryman': { cc: 1499, price: 4600000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'Countryman EV': { cc: 0, price: 5500000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' }
+    },
+    'Lexus': {
+        'ES': { cc: 2487, price: 6400000, type: '4W', segment: 'Sedan', fuel: 'Hybrid' },
+        'NX': { cc: 2487, price: 6750000, type: '4W', segment: 'SUV', fuel: 'Hybrid' },
+        'RX': { cc: 2487, price: 9800000, type: '4W', segment: 'SUV', fuel: 'Hybrid' },
+        'LX': { cc: 3346, price: 28500000, type: '4W', segment: 'Luxury SUV', fuel: 'Diesel' }
+    },
+    'Jaguar': {
+        'F-PACE': { cc: 1997, price: 7700000, type: '4W', segment: 'SUV', fuel: 'Petrol' },
+        'I-PACE': { cc: 0, price: 10600000, type: '4W', segment: 'Electric SUV', fuel: 'Electric' }
+    },
+    'Force Motors': {
+        'Gurkha': { cc: 2596, price: 1650000, type: '4W', segment: 'Off-Road SUV', fuel: 'Diesel' },
+        'Trax Cruiser': { cc: 2596, price: 1200000, type: '4W', segment: 'MUV', fuel: 'Diesel' }
+    },
+    'Isuzu': {
+        'V-Cross': { cc: 1898, price: 2465000, type: '4W', segment: 'Pickup', fuel: 'Diesel' },
+        'D-Max': { cc: 1898, price: 1650000, type: '4W', segment: 'Pickup', fuel: 'Diesel' },
+        'mu-X': { cc: 1898, price: 3600000, type: '4W', segment: 'SUV', fuel: 'Diesel' }
+    }
+};
+
+// ===== CAR BRAND POPULARITY BY STATE =====
+const CAR_BRAND_POPULARITY = {
+    'DL': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Mahindra', 'Honda Cars', 'Toyota', 'MG', 'Volkswagen', 'BMW'],
+    'MH': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Honda Cars', 'Toyota', 'Volkswagen', 'Skoda', 'MG'],
+    'KA': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Toyota', 'Honda Cars', 'Mahindra', 'MG', 'Renault', 'Volkswagen'],
+    'TN': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Toyota', 'Kia', 'Honda Cars', 'Renault', 'Mahindra', 'Nissan', 'MG'],
+    'TS': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Mahindra', 'Toyota', 'Honda Cars', 'MG', 'Renault', 'Volkswagen'],
+    'AP': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Toyota', 'Mahindra', 'Honda Cars', 'Renault', 'MG'],
+    'UP': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Toyota', 'Honda Cars', 'Renault', 'MG'],
+    'RJ': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Toyota', 'Renault', 'Honda Cars'],
+    'GJ': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Mahindra', 'Honda Cars', 'Toyota', 'MG', 'Renault'],
+    'HR': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Mahindra', 'Toyota', 'Honda Cars', 'MG', 'Volkswagen'],
+    'PB': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Toyota', 'Honda Cars', 'MG'],
+    'WB': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Toyota', 'Honda Cars', 'Mahindra', 'Renault'],
+    'KL': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Toyota', 'Honda Cars', 'Mahindra', 'MG', 'Renault'],
+    'MP': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Toyota', 'Honda Cars'],
+    'BR': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Honda Cars'],
+    'JH': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Honda Cars'],
+    'OD': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Mahindra', 'Honda Cars'],
+    'CG': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia'],
+    'UK': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra', 'Kia', 'Toyota'],
+    'GA': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Volkswagen', 'Toyota'],
+    'SK': ['Maruti Suzuki', 'Hyundai', 'Tata'],
+    'CH': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Toyota', 'BMW'],
+    'AS': ['Maruti Suzuki', 'Hyundai', 'Tata', 'Mahindra']
+};
+
 // ===== VEHICLE LOOKUP ENGINE =====
 // ===== HARDCODED DEMO VEHICLES (for hackathon showcase) =====
 const DEMO_VEHICLES = {
@@ -310,63 +568,71 @@ const DEMO_VEHICLES = {
     }
 };
 
-function lookupVehicle(regNumber) {
+function lookupVehicle(regNumber, vehicleType) {
     const clean = regNumber.replace(/\s/g, '').toUpperCase();
 
     if (clean.length < 8) {
         return { success: false, error: 'Invalid registration number format' };
     }
 
-    // Check demo vehicles first
+    // Check demo vehicles first (respect vehicleType parameter)
     if (DEMO_VEHICLES[clean]) {
         const demo = DEMO_VEHICLES[clean];
-        const stateCode = clean.substring(0, 2);
-        const districtCode = clean.substring(2, 4);
-        const series = clean.substring(4, 6);
-        const number = clean.substring(6);
-        const stateInfo = RTO_DATABASE[stateCode];
-        const rtoName = stateInfo?.zones[districtCode] || `RTO ${districtCode}`;
-        const currentYear = new Date().getFullYear();
-        const vehicleAge = currentYear - demo.year;
-        let depPercent = vehicleAge <= 0 ? 0 : vehicleAge <= 1 ? 15 : vehicleAge <= 2 ? 20 : vehicleAge <= 3 ? 30 : vehicleAge <= 4 ? 40 : 50;
-        const idv = Math.round(demo.exShowroomPrice * (1 - depPercent / 100));
-        const cc = demo.cc;
-        // Handle 4W vs 2W TP rates
-        let tpPremium;
-        if (demo.type === '4W') {
-            tpPremium = cc <= 1000 ? 2094 : cc <= 1500 ? 3416 : 7897;
+
+        // Validate vehicle type matches the requested type
+        const requestedType = vehicleType === '4W' ? '4W' : '2W';
+        if (demo.type !== requestedType) {
+            // If type doesn't match, fall through to generate appropriate vehicle
+            console.log(`Demo vehicle type mismatch: got ${demo.type}, expected ${requestedType}. Generating dynamic vehicle.`);
         } else {
-            tpPremium = cc === 0 ? 714 : cc <= 75 ? IRDAI_TP_RATES.twoWheeler.below75cc : cc <= 150 ? IRDAI_TP_RATES.twoWheeler.from75to150cc : cc <= 350 ? IRDAI_TP_RATES.twoWheeler.from150to350cc : IRDAI_TP_RATES.twoWheeler.above350cc;
-        }
-        const odRate = demo.type === '4W' ? (cc > 1500 ? 0.032 : 0.026) : (cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022));
-        const odPremium = Math.round(idv * odRate);
-        // Dynamic insurance status based on vehicle age
-        const insStatus = vehicleAge <= 1 ? 'Active' : vehicleAge <= 3 ? 'Expired (Renewal Due)' : 'Expired';
-        const regMonth = (Math.abs(hashCode(clean)) % 12) + 1;
-        const fitnessYear = demo.year + (demo.type === '4W' ? 15 : 5);
-        return {
-            success: true,
-            data: {
-                registrationNumber: clean,
-                formattedRegNumber: `${stateCode} ${districtCode} ${series} ${number}`,
-                state: stateInfo?.state || 'Telangana',
-                rtoCode: `${stateCode}${districtCode}`,
-                rtoName,
-                make: demo.make, model: demo.model, year: demo.year,
-                cc: demo.cc, fuel: demo.fuel, type: demo.type,
-                segment: demo.segment, variant: demo.variant,
-                exShowroomPrice: demo.exShowroomPrice,
-                ownerName: demo.ownerName || 'N/A',
-                color: demo.color || 'N/A',
-                idv, vehicleAge, depreciation: depPercent,
-                premium: { thirdParty: tpPremium, ownDamage: odPremium, comprehensive: tpPremium + odPremium, thirdPartyOnly: tpPremium },
-                insuranceStatus: insStatus,
-                fitnessValidUpto: `${fitnessYear}-${String(regMonth).padStart(2, '0')}`,
-                registrationDate: `${demo.year}-${String(regMonth).padStart(2, '0')}-15`,
-                timestamp: new Date().toISOString(),
-                source: 'Parivahan-RTO-Verified'
+            const stateCode = clean.substring(0, 2);
+            const districtCode = clean.substring(2, 4);
+            const series = clean.substring(4, 6);
+            const number = clean.substring(6);
+            const stateInfo = RTO_DATABASE[stateCode];
+            const rtoName = stateInfo?.zones[districtCode] || `RTO ${districtCode}`;
+            const currentYear = new Date().getFullYear();
+            const vehicleAge = currentYear - demo.year;
+            let depPercent = vehicleAge <= 0 ? 0 : vehicleAge <= 1 ? 15 : vehicleAge <= 2 ? 20 : vehicleAge <= 3 ? 30 : vehicleAge <= 4 ? 40 : 50;
+            const idv = Math.round(demo.exShowroomPrice * (1 - depPercent / 100));
+            const cc = demo.cc;
+            // Handle 4W vs 2W TP rates
+            let tpPremium;
+            if (demo.type === '4W') {
+                tpPremium = cc <= 1000 ? 2094 : cc <= 1500 ? 3416 : 7897;
+            } else {
+                tpPremium = cc === 0 ? 714 : cc <= 75 ? IRDAI_TP_RATES.twoWheeler.below75cc : cc <= 150 ? IRDAI_TP_RATES.twoWheeler.from75to150cc : cc <= 350 ? IRDAI_TP_RATES.twoWheeler.from150to350cc : IRDAI_TP_RATES.twoWheeler.above350cc;
             }
-        };
+            const odRate = demo.type === '4W' ? (cc > 1500 ? 0.032 : 0.026) : (cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022));
+            const odPremium = Math.round(idv * odRate);
+            // Dynamic insurance status based on vehicle age
+            const insStatus = vehicleAge <= 1 ? 'Active' : vehicleAge <= 3 ? 'Expired (Renewal Due)' : 'Expired';
+            const regMonth = (Math.abs(hashCode(clean)) % 12) + 1;
+            const fitnessYear = demo.year + (demo.type === '4W' ? 15 : 5);
+            return {
+                success: true,
+                data: {
+                    registrationNumber: clean,
+                    formattedRegNumber: `${stateCode} ${districtCode} ${series} ${number}`,
+                    state: stateInfo?.state || 'Telangana',
+                    rtoCode: `${stateCode}${districtCode}`,
+                    rtoName,
+                    make: demo.make, model: demo.model, year: demo.year,
+                    cc: demo.cc, fuel: demo.fuel, type: demo.type,
+                    segment: demo.segment, variant: demo.variant,
+                    exShowroomPrice: demo.exShowroomPrice,
+                    ownerName: demo.ownerName || 'N/A',
+                    color: demo.color || 'N/A',
+                    idv, vehicleAge, depreciation: depPercent,
+                    premium: { thirdParty: tpPremium, ownDamage: odPremium, comprehensive: tpPremium + odPremium, thirdPartyOnly: tpPremium },
+                    insuranceStatus: insStatus,
+                    fitnessValidUpto: `${fitnessYear}-${String(regMonth).padStart(2, '0')}`,
+                    registrationDate: `${demo.year}-${String(regMonth).padStart(2, '0')}-15`,
+                    timestamp: new Date().toISOString(),
+                    source: 'Parivahan-RTO-Verified'
+                }
+            };
+        }
     }
 
     const stateCode = clean.substring(0, 2);
@@ -383,16 +649,23 @@ function lookupVehicle(regNumber) {
 
     // Deterministic vehicle selection based on registration number
     const seed = hashCode(clean);
-    const brands = BRAND_POPULARITY[stateCode] || ['Hero', 'Honda', 'Bajaj', 'TVS', 'Yamaha'];
-    const brand = brands[Math.abs(seed) % brands.length];
-    
-    const models = Object.keys(VEHICLE_DATABASE[brand] || {});
+
+    // Choose database based on vehicleType parameter
+    const isCar = vehicleType === '4W';
+    const brandList = isCar
+        ? (CAR_BRAND_POPULARITY[stateCode] || ['Maruti Suzuki', 'Hyundai', 'Tata', 'Kia', 'Mahindra'])
+        : (BRAND_POPULARITY[stateCode] || ['Hero', 'Honda', 'Bajaj', 'TVS', 'Yamaha']);
+    const db = isCar ? CAR_DATABASE : VEHICLE_DATABASE;
+
+    const brand = brandList[Math.abs(seed) % brandList.length];
+
+    const models = Object.keys(db[brand] || {});
     if (models.length === 0) {
         return { success: false, error: 'Vehicle data not available' };
     }
-    
+
     const model = models[Math.abs(seed >> 4) % models.length];
-    const vehicleInfo = VEHICLE_DATABASE[brand][model];
+    const vehicleInfo = db[brand][model];
 
     // Generate year based on number (newer numbers = newer vehicles)
     const numPart = parseInt(number) || 1000;
@@ -414,22 +687,33 @@ function lookupVehicle(regNumber) {
     else if (vehicleAge <= 3) depPercent = 30;
     else if (vehicleAge <= 4) depPercent = 40;
     else depPercent = 50;
-    
+
     const idv = Math.round(vehicleInfo.price * (1 - depPercent / 100));
 
     // Calculate premium using IRDAI rates
     const cc = vehicleInfo.cc;
     let tpPremium;
-    if (cc === 0) tpPremium = 714; // Electric vehicles
-    else if (cc <= 75) tpPremium = IRDAI_TP_RATES.twoWheeler.below75cc;
-    else if (cc <= 150) tpPremium = IRDAI_TP_RATES.twoWheeler.from75to150cc;
-    else if (cc <= 350) tpPremium = IRDAI_TP_RATES.twoWheeler.from150to350cc;
-    else tpPremium = IRDAI_TP_RATES.twoWheeler.above350cc;
+    if (isCar || vehicleInfo.type === '4W') {
+        // Car (4W) TP rates
+        if (cc === 0) tpPremium = 2094; // EV cars - use lowest slab
+        else if (cc <= 1000) tpPremium = IRDAI_TP_RATES.car.below1000cc;
+        else if (cc <= 1500) tpPremium = IRDAI_TP_RATES.car.from1000to1500cc;
+        else tpPremium = IRDAI_TP_RATES.car.above1500cc;
+    } else {
+        // Two-wheeler TP rates
+        if (cc === 0) tpPremium = 714; // Electric vehicles
+        else if (cc <= 75) tpPremium = IRDAI_TP_RATES.twoWheeler.below75cc;
+        else if (cc <= 150) tpPremium = IRDAI_TP_RATES.twoWheeler.from75to150cc;
+        else if (cc <= 350) tpPremium = IRDAI_TP_RATES.twoWheeler.from150to350cc;
+        else tpPremium = IRDAI_TP_RATES.twoWheeler.above350cc;
+    }
 
-    // Own damage premium (approx 2-3% of IDV)
-    const odRate = cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022);
+    // Own damage premium
+    const odRate = (isCar || vehicleInfo.type === '4W')
+        ? (cc > 1500 ? 0.032 : 0.026)
+        : (cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022));
     const odPremium = Math.round(idv * odRate);
-    
+
     const totalPremium = tpPremium + odPremium;
 
     return {
@@ -481,7 +765,7 @@ function hashCode(str) {
 function generateQuotes(vehicleData) {
     const baseOD = vehicleData.premium.ownDamage;
     const baseTP = vehicleData.premium.thirdParty;
-    
+
     const insurers = [
         { id: 'hdfc', name: 'HDFC ERGO', logo: 'assets/hdfc-life-insurance.jpg', discountRange: [0.08, 0.15], claimRatio: 97.8, garages: 7200, rating: 4.5 },
         { id: 'icici', name: 'ICICI Lombard', logo: 'assets/icici-prudential-life-insurance.png', discountRange: [0.10, 0.18], claimRatio: 96.5, garages: 6500, rating: 4.4 },
@@ -495,13 +779,13 @@ function generateQuotes(vehicleData) {
 
     return insurers.map((insurer, i) => {
         // Deterministic discount based on insurer + vehicle
-        const discountFactor = insurer.discountRange[0] + 
+        const discountFactor = insurer.discountRange[0] +
             (Math.abs((seed >> (i * 3)) % 100) / 100) * (insurer.discountRange[1] - insurer.discountRange[0]);
-        
+
         const discountedOD = Math.round(baseOD * (1 - discountFactor));
         const comprehensivePremium = baseTP + discountedOD;
         const tpOnlyPremium = baseTP;
-        
+
         // Add GST (18%)
         const comprehensiveWithGST = Math.round(comprehensivePremium * 1.18);
         const tpOnlyWithGST = Math.round(tpOnlyPremium * 1.18);
@@ -550,36 +834,37 @@ function generateQuotes(vehicleData) {
 
 // Vehicle Lookup
 app.post('/api/vehicle/lookup', (req, res) => {
-    const { registrationNumber } = req.body;
-    
+    const { registrationNumber, vehicleType } = req.body;
+
     if (!registrationNumber) {
         return res.status(400).json({ success: false, error: 'Registration number required' });
     }
 
     // Simulate network latency (real API feel)
     const delay = 800 + Math.random() * 700;
-    
+
     setTimeout(() => {
-        const result = lookupVehicle(registrationNumber);
-        
+        const result = lookupVehicle(registrationNumber, vehicleType);
+
         if (result.success) {
             // Also generate insurance quotes
             result.data.quotes = generateQuotes(result.data);
         }
-        
+
         res.json(result);
     }, delay);
 });
 
 // Get insurance quotes for given vehicle details
 app.post('/api/insurance/quotes', (req, res) => {
-    const { make, model, year, cc, city } = req.body;
-    
+    const { make, model, year, cc, city, vehicleType } = req.body;
+
     if (!make || !model || !year) {
         return res.status(400).json({ success: false, error: 'Vehicle details required' });
     }
 
-    const vehicleInfo = VEHICLE_DATABASE[make]?.[model];
+    // Search in both databases
+    const vehicleInfo = VEHICLE_DATABASE[make]?.[model] || CAR_DATABASE[make]?.[model];
     if (!vehicleInfo) {
         return res.status(404).json({ success: false, error: 'Vehicle not found in database' });
     }
@@ -587,16 +872,24 @@ app.post('/api/insurance/quotes', (req, res) => {
     const vehicleAge = new Date().getFullYear() - parseInt(year);
     let depPercent = vehicleAge <= 0 ? 0 : vehicleAge <= 1 ? 15 : vehicleAge <= 2 ? 20 : vehicleAge <= 3 ? 30 : vehicleAge <= 4 ? 40 : 50;
     const idv = Math.round(vehicleInfo.price * (1 - depPercent / 100));
-    
-    const engineCC = vehicleInfo.cc;
-    let tpPremium;
-    if (engineCC === 0) tpPremium = 714;
-    else if (engineCC <= 75) tpPremium = IRDAI_TP_RATES.twoWheeler.below75cc;
-    else if (engineCC <= 150) tpPremium = IRDAI_TP_RATES.twoWheeler.from75to150cc;
-    else if (engineCC <= 350) tpPremium = IRDAI_TP_RATES.twoWheeler.from150to350cc;
-    else tpPremium = IRDAI_TP_RATES.twoWheeler.above350cc;
 
-    const odRate = engineCC > 350 ? 0.035 : (engineCC > 150 ? 0.028 : 0.022);
+    const engineCC = vehicleInfo.cc;
+    const isCar = vehicleType === '4W' || vehicleInfo.type === '4W';
+    let tpPremium;
+    if (isCar) {
+        if (engineCC === 0) tpPremium = 2094;
+        else if (engineCC <= 1000) tpPremium = IRDAI_TP_RATES.car.below1000cc;
+        else if (engineCC <= 1500) tpPremium = IRDAI_TP_RATES.car.from1000to1500cc;
+        else tpPremium = IRDAI_TP_RATES.car.above1500cc;
+    } else {
+        if (engineCC === 0) tpPremium = 714;
+        else if (engineCC <= 75) tpPremium = IRDAI_TP_RATES.twoWheeler.below75cc;
+        else if (engineCC <= 150) tpPremium = IRDAI_TP_RATES.twoWheeler.from75to150cc;
+        else if (engineCC <= 350) tpPremium = IRDAI_TP_RATES.twoWheeler.from150to350cc;
+        else tpPremium = IRDAI_TP_RATES.twoWheeler.above350cc;
+    }
+
+    const odRate = isCar ? (engineCC > 1500 ? 0.032 : 0.026) : (engineCC > 350 ? 0.035 : (engineCC > 150 ? 0.028 : 0.022));
     const odPremium = Math.round(idv * odRate);
 
     const vehicleData = {
@@ -608,7 +901,7 @@ app.post('/api/insurance/quotes', (req, res) => {
     };
 
     const quotes = generateQuotes(vehicleData);
-    
+
     setTimeout(() => {
         res.json({
             success: true,
@@ -629,16 +922,18 @@ app.post('/api/insurance/quotes', (req, res) => {
 
 // Get vehicle brands
 app.get('/api/vehicle/brands', (req, res) => {
+    const type = req.query.type; // '4W' for cars, '2W' for bikes
+    const db = type === '4W' ? CAR_DATABASE : VEHICLE_DATABASE;
     res.json({
         success: true,
-        brands: Object.keys(VEHICLE_DATABASE)
+        brands: Object.keys(db)
     });
 });
 
 // Get models for a brand
 app.get('/api/vehicle/models/:brand', (req, res) => {
     const brand = req.params.brand;
-    const models = VEHICLE_DATABASE[brand];
+    const models = VEHICLE_DATABASE[brand] || CAR_DATABASE[brand];
     if (!models) {
         return res.status(404).json({ success: false, error: 'Brand not found' });
     }
@@ -657,21 +952,29 @@ app.get('/api/vehicle/models/:brand', (req, res) => {
 
 // Premium calculator
 app.post('/api/premium/calculate', (req, res) => {
-    const { idv, ncb, cc, policyType } = req.body;
-    
-    let tpPremium;
-    if (cc === 0) tpPremium = 714;
-    else if (cc <= 75) tpPremium = IRDAI_TP_RATES.twoWheeler.below75cc;
-    else if (cc <= 150) tpPremium = IRDAI_TP_RATES.twoWheeler.from75to150cc;
-    else if (cc <= 350) tpPremium = IRDAI_TP_RATES.twoWheeler.from150to350cc;
-    else tpPremium = IRDAI_TP_RATES.twoWheeler.above350cc;
+    const { idv, ncb, cc, policyType, vehicleType } = req.body;
 
-    const odRate = cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022);
+    const isCar = vehicleType === '4W';
+    let tpPremium;
+    if (isCar) {
+        if (cc === 0) tpPremium = 2094;
+        else if (cc <= 1000) tpPremium = IRDAI_TP_RATES.car.below1000cc;
+        else if (cc <= 1500) tpPremium = IRDAI_TP_RATES.car.from1000to1500cc;
+        else tpPremium = IRDAI_TP_RATES.car.above1500cc;
+    } else {
+        if (cc === 0) tpPremium = 714;
+        else if (cc <= 75) tpPremium = IRDAI_TP_RATES.twoWheeler.below75cc;
+        else if (cc <= 150) tpPremium = IRDAI_TP_RATES.twoWheeler.from75to150cc;
+        else if (cc <= 350) tpPremium = IRDAI_TP_RATES.twoWheeler.from150to350cc;
+        else tpPremium = IRDAI_TP_RATES.twoWheeler.above350cc;
+    }
+
+    const odRate = isCar ? (cc > 1500 ? 0.032 : 0.026) : (cc > 350 ? 0.035 : (cc > 150 ? 0.028 : 0.022));
     let odPremium = Math.round(idv * odRate);
-    
+
     // Apply NCB
     odPremium = Math.round(odPremium * (1 - (ncb || 0) / 100));
-    
+
     const premium = policyType === 'third-party' ? tpPremium : tpPremium + odPremium;
     const gst = Math.round(premium * 0.18);
 
@@ -693,7 +996,7 @@ app.get('/api/rto/:code', (req, res) => {
     const code = req.params.code.toUpperCase();
     const stateCode = code.substring(0, 2);
     const districtCode = code.substring(2, 4);
-    
+
     const stateInfo = RTO_DATABASE[stateCode];
     if (!stateInfo) {
         return res.status(404).json({ success: false, error: 'RTO not found' });
@@ -712,12 +1015,12 @@ app.get('/api/rto/:code', (req, res) => {
 const negotiationSessions = {};
 
 const INSURER_NEGOTIATION_PROFILES = {
-    hdfc:  { name: 'HDFC ERGO',      maxDiscount: 0.18, aggression: 0.7, loyalty: 0.04, ncbBonus: 0.03, minMargin: 0.05, walkAwayRound: 4 },
-    icici: { name: 'ICICI Lombard',   maxDiscount: 0.22, aggression: 0.5, loyalty: 0.05, ncbBonus: 0.04, minMargin: 0.04, walkAwayRound: 5 },
-    bajaj: { name: 'Bajaj Allianz',   maxDiscount: 0.15, aggression: 0.8, loyalty: 0.03, ncbBonus: 0.02, minMargin: 0.06, walkAwayRound: 3 },
-    tata:  { name: 'Tata AIG',        maxDiscount: 0.17, aggression: 0.6, loyalty: 0.04, ncbBonus: 0.03, minMargin: 0.05, walkAwayRound: 4 },
-    sbi:   { name: 'SBI General',     maxDiscount: 0.12, aggression: 0.9, loyalty: 0.02, ncbBonus: 0.02, minMargin: 0.07, walkAwayRound: 3 },
-    max:   { name: 'Max Life',        maxDiscount: 0.16, aggression: 0.65, loyalty: 0.03, ncbBonus: 0.03, minMargin: 0.05, walkAwayRound: 4 }
+    hdfc: { name: 'HDFC ERGO', maxDiscount: 0.18, aggression: 0.7, loyalty: 0.04, ncbBonus: 0.03, minMargin: 0.05, walkAwayRound: 4 },
+    icici: { name: 'ICICI Lombard', maxDiscount: 0.22, aggression: 0.5, loyalty: 0.05, ncbBonus: 0.04, minMargin: 0.04, walkAwayRound: 5 },
+    bajaj: { name: 'Bajaj Allianz', maxDiscount: 0.15, aggression: 0.8, loyalty: 0.03, ncbBonus: 0.02, minMargin: 0.06, walkAwayRound: 3 },
+    tata: { name: 'Tata AIG', maxDiscount: 0.17, aggression: 0.6, loyalty: 0.04, ncbBonus: 0.03, minMargin: 0.05, walkAwayRound: 4 },
+    sbi: { name: 'SBI General', maxDiscount: 0.12, aggression: 0.9, loyalty: 0.02, ncbBonus: 0.02, minMargin: 0.07, walkAwayRound: 3 },
+    max: { name: 'Max Life', maxDiscount: 0.16, aggression: 0.65, loyalty: 0.03, ncbBonus: 0.03, minMargin: 0.05, walkAwayRound: 4 }
 };
 
 function generateSessionId() {
@@ -730,13 +1033,13 @@ function calculateInsurerOffer(profile, baseQuote, round, totalRounds) {
     const concessionCurve = Math.pow(progress, profile.aggression);
     const currentDiscount = (baseQuote.discount / 100) + concessionCurve * (profile.maxDiscount - baseQuote.discount / 100);
     const cappedDiscount = Math.min(currentDiscount, profile.maxDiscount);
-    
+
     const baseOD = baseQuote.premium.comprehensive.ownDamage / (1 - baseQuote.discount / 100);
     const newOD = Math.round(baseOD * (1 - cappedDiscount));
     const tp = baseQuote.premium.comprehensive.thirdParty;
     const subtotal = tp + newOD;
     const gst = Math.round(subtotal * 0.18);
-    
+
     return {
         insurerId: baseQuote.insurerId,
         insurerName: baseQuote.insurerName,
@@ -860,8 +1163,8 @@ app.post('/api/negotiate/simulate', async (req, res) => {
             const roundContext = round === 1
                 ? `Round 1 of negotiation. Initial counter-offers received. Best offer so far: ${roundOffers[0].insurerName} at ₹${roundOffers[0].premium.total}. Savings range: ₹${roundOffers[roundOffers.length - 1].savings} to ₹${roundOffers[0].savings}.`
                 : round === 2
-                ? `Round 2. Insurers are improving offers. ${roundOffers[0].insurerName} leads at ₹${roundOffers[0].premium.total} (${roundOffers[0].savingsPercent}% savings). Some are adding free add-ons to sweeten the deal.`
-                : `Final round 3. Best and final offers are in. ${roundOffers[0].insurerName} offers ₹${roundOffers[0].premium.total} with ${roundOffers[0].savingsPercent}% total savings and free zero-dep coverage. This is the best we can get.`;
+                    ? `Round 2. Insurers are improving offers. ${roundOffers[0].insurerName} leads at ₹${roundOffers[0].premium.total} (${roundOffers[0].savingsPercent}% savings). Some are adding free add-ons to sweeten the deal.`
+                    : `Final round 3. Best and final offers are in. ${roundOffers[0].insurerName} offers ₹${roundOffers[0].premium.total} with ${roundOffers[0].savingsPercent}% total savings and free zero-dep coverage. This is the best we can get.`;
 
             const aiRes = await axios.post(
                 'https://openrouter.ai/api/v1/chat/completions',
@@ -980,6 +1283,198 @@ app.post('/api/negotiate/accept', (req, res) => {
     });
 });
 
+// ===== REAL INDIAN INSURANCE POLICIES WITH AI CLASSIFICATION =====
+
+// Comprehensive Indian Insurance Policy Database
+const INDIAN_INSURANCE_POLICIES = {
+    motor: {
+        category: 'Motor Insurance',
+        description: 'Vehicle insurance covering cars and two-wheelers',
+        policies: [
+            { id: 'hdfc-mot', insurerId: 'hdfc', insurerName: 'HDFC ERGO', productName: 'Motor Insurance', type: 'Comprehensive', keyFeatures: ['Cashless claims at 7200+ garages', '98.5% claim settlement', 'Zero Depreciation', 'Roadside Assistance'], premiumRange: '₹2,000-15,000', rating: 4.5, claimRatio: 98.5 },
+            { id: 'icici-mot', insurerId: 'icici', insurerName: 'ICICI Lombard', productName: 'Motor Insurance', type: 'Comprehensive', keyFeatures: ['6500+ network garages', '97.2% claim settlement', 'Instant policy', '24/7 support'], premiumRange: '₹1,800-14,000', rating: 4.4, claimRatio: 97.2 },
+            { id: 'bajaj-mot', insurerId: 'bajaj', insurerName: 'Bajaj Allianz', productName: 'Motor Insurance', type: 'Comprehensive', keyFeatures: ['5800+ garages', '98.8% claim settlement', 'Easy claims', 'Discounts available'], premiumRange: '₹1,500-12,000', rating: 4.3, claimRatio: 98.8 },
+            { id: 'tata-mot', insurerId: 'tata', insurerName: 'Tata AIG', productName: 'Motor Insurance', type: 'Comprehensive', keyFeatures: ['5200+ garages', '95.2% claim settlement', 'Premium coverage', 'Quick settlement'], premiumRange: '₹2,200-16,000', rating: 4.2, claimRatio: 95.2 },
+            { id: 'sbi-mot', insurerId: 'sbi', insurerName: 'SBI General', productName: 'Motor Insurance', type: 'Comprehensive', keyFeatures: ['4800+ garages', '94.8% claim settlement', 'Economical rates', 'Wide network'], premiumRange: '₹1,400-10,000', rating: 4.1, claimRatio: 94.8 },
+            { id: 'digit-mot', insurerId: 'digit', insurerName: 'Digit', productName: 'Motor Insurance', type: 'Comprehensive', keyFeatures: ['6000+ garages', '96% claim settlement', 'Best prices', 'Easy app'], premiumRange: '₹1,200-9,000', rating: 4.4, claimRatio: 96.0 }
+        ]
+    },
+    health: {
+        category: 'Health Insurance',
+        description: 'Medical insurance for individuals and families',
+        policies: [
+            { id: 'star-health', insurerId: 'star', insurerName: 'Star Health', productName: 'Family Health Optima', type: 'Family Floater', keyFeatures: ['13000+ network hospitals', '66% claim settlement', 'No medical check-up up to 45 yrs', 'Maternity cover'], premiumRange: '₹5,000-50,000', rating: 4.5, claimRatio: 66.0 },
+            { id: 'niva-bupa', insurerId: 'niva', insurerName: 'Niva Bupa', productName: 'Reassure', type: 'Family Floater', keyFeatures: ['10000+ hospitals', '80% claim settlement', 'Restore benefit', 'International second opinion'], premiumRange: '₹8,000-75,000', rating: 4.6, claimRatio: 80.0 },
+            { id: 'hdfc-health', insurerId: 'hdfc', insurerName: 'HDFC ERGO', productName: 'Optima Restore', type: 'Individual', keyFeatures: ['13000 hospitals', '96.2% claim settlement', 'Restore benefit', 'Daycare treatments'], premiumRange: '₹6,000-60,000', rating: 4.4, claimRatio: 96.2 },
+            { id: 'icici-health', insurerId: 'icici', insurerName: 'ICICI Lombard', productName: 'Health Booster', type: 'Family Floater', keyFeatures: ['11500 hospitals', '95.1% claim settlement', 'Unlimited restore', 'Premium health checkup'], premiumRange: '₹7,000-65,000', rating: 4.3, claimRatio: 95.1 },
+            { id: 'care-health', insurerId: 'care', insurerName: 'Care Health', productName: 'Care Supreme', type: 'Family Floater', keyFeatures: ['11000 hospitals', '95% claim settlement', 'NCB super reload', 'Air ambulance'], premiumRange: '₹6,500-55,000', rating: 4.4, claimRatio: 95.0 },
+            { id: 'aditya-birla', insurerId: 'ab', insurerName: 'Aditya Birla', productName: 'Active Health', type: 'Family Floater', keyFeatures: ['10000 hospitals', '94% claim settlement', 'Restore benefit', 'Chronic management'], premiumRange: '₹7,500-70,000', rating: 4.2, claimRatio: 94.0 }
+        ]
+    },
+    life: {
+        category: 'Life Insurance',
+        description: 'Term and investment life insurance plans',
+        policies: [
+            { id: 'lic-term', insurerId: 'lic', insurerName: 'LIC', productName: 'Jeevan Anand', type: 'Term + Endowment', keyFeatures: ['98.6% claim settlement', 'Trustworthy brand', 'Loan facility', 'Bonus additions'], premiumRange: '₹8,000-1,50,000', rating: 4.7, claimRatio: 98.6 },
+            { id: 'hdfc-life', insurerId: 'hdfclife', insurerName: 'HDFC Life', productName: 'Click 2 Protect', type: 'Term', keyFeatures: ['99.1% claim settlement', 'Online discount 30%', 'Flexible cover', 'Critical illness rider'], premiumRange: '₹6,000-1,20,000', rating: 4.5, claimRatio: 99.1 },
+            { id: 'max-life', insurerId: 'maxlife', insurerName: 'Max Life', productName: 'Smart Term Plus', type: 'Term', keyFeatures: ['99.6% claim settlement', 'Highest claim ratio', 'Return of premium option', 'Premium waiver'], premiumRange: '₹6,500-1,30,000', rating: 4.6, claimRatio: 99.6 },
+            { id: 'icici-pru', insurerId: 'icicipru', insurerName: 'ICICI Prudential', productName: 'iProtect Smart', type: 'Term', keyFeatures: ['98.5% claim settlement', 'Critical illness cover', 'Accidental death rider', 'Tax benefits'], premiumRange: '₹5,500-1,10,000', rating: 4.4, claimRatio: 98.5 },
+            { id: 'sbi-life', insurerId: 'sbilife', insurerName: 'SBI Life', productName: 'eShield Next', type: 'Term', keyFeatures: ['97.8% claim settlement', 'Online term plans', 'Spouse cover option', 'Tax savings'], premiumRange: '₹5,000-1,00,000', rating: 4.3, claimRatio: 97.8 },
+            { id: 'tata-aia', insurerId: 'tataaia', insurerName: 'Tata AIA', productName: 'Aegon Life iTerm', type: 'Term', keyFeatures: ['99.1% claim settlement', 'Cancer cover', 'Terminal illness', 'Income replacement'], premiumRange: '₹6,000-1,15,000', rating: 4.5, claimRatio: 99.1 }
+        ]
+    },
+    travel: {
+        category: 'Travel Insurance',
+        description: 'Domestic and international travel insurance',
+        policies: [
+            { id: 'bajaj-travel', insurerId: 'bajaj', insurerName: 'Bajaj Allianz', productName: 'Travel Insurance', type: 'International', keyFeatures: ['Medical coverage up to $500K', 'Trip cancellation', 'Baggage loss', 'Flight delay'], premiumRange: '₹300-5,000', rating: 4.4, claimRatio: 97.0 },
+            { id: 'icici-travel', insurerId: 'icici', insurerName: 'ICICI Lombard', productName: 'Travel Insurance', type: 'International', keyFeatures: ['COVID-19 covered', 'Emergency evacuation', 'Personal liability', '24/7 assistance'], premiumRange: '₹350-6,000', rating: 4.3, claimRatio: 96.0 },
+            { id: 'hdfc-travel', insurerId: 'hdfc', insurerName: 'HDFC ERGO', productName: 'Travel Insurance', type: 'International', keyFeatures: ['Schengen compliant', 'Adventure sports', 'Home contents cover', 'Cashless claims'], premiumRange: '₹400-7,000', rating: 4.5, claimRatio: 97.5 },
+            { id: 'digit-travel', insurerId: 'digit', insurerName: 'Digit', productName: 'Travel Insurance', type: 'Domestic', keyFeatures: ['Affordable rates', 'Instant policy', 'Trip delay cover', 'Personal accident'], premiumRange: '₹150-1,500', rating: 4.2, claimRatio: 95.0 }
+        ]
+    },
+    home: {
+        category: 'Home Insurance',
+        description: 'House and contents insurance',
+        policies: [
+            { id: 'hdfc-home', insurerId: 'hdfc', insurerName: 'HDFC ERGO', productName: 'Home Insurance', type: 'Building + Contents', keyFeatures: ['Fire, flood, earthquake', 'Burglary cover', 'Jewelry & valuables', 'Rent compensation'], premiumRange: '₹1,000-15,000', rating: 4.5, claimRatio: 97.0 },
+            { id: 'icici-home', insurerId: 'icici', insurerName: 'ICICI Lombard', productName: 'Home Insurance', type: 'Building + Contents', keyFeatures: ['Natural calamities', 'Theft cover', 'Electrical breakdown', 'Architect fee cover'], premiumRange: '₹1,200-18,000', rating: 4.4, claimRatio: 96.0 },
+            { id: 'bajaj-home', insurerId: 'bajaj', insurerName: 'Bajaj Allianz', productName: 'Home Insurance', type: 'Building + Contents', keyFeatures: ['All-risk cover', 'Personal accident', 'Liability cover', 'Alternative accommodation'], premiumRange: '₹800-12,000', rating: 4.3, claimRatio: 97.5 },
+            { id: 'sbi-home', insurerId: 'sbi', insurerName: 'SBI General', productName: 'Home Insurance', type: 'Building Only', keyFeatures: ['Bank tie-up benefits', 'Fire & burglary', 'Affordable premium', 'Easy claim process'], premiumRange: '₹500-8,000', rating: 4.1, claimRatio: 94.0 }
+        ]
+    },
+    cyber: {
+        category: 'Cyber Insurance',
+        description: 'Digital security and online fraud protection',
+        policies: [
+            { id: 'hdfc-cyber', insurerId: 'hdfc', insurerName: 'HDFC ERGO', productName: 'Cyber Insurance', type: 'Individual', keyFeatures: ['Online fraud cover', 'Identity theft', 'Cyber bullying', 'Data breach'], premiumRange: '₹500-5,000', rating: 4.4, claimRatio: 95.0 },
+            { id: 'bajaj-cyber', insurerId: 'bajaj', insurerName: 'Bajaj Allianz', productName: 'Cyber Insurance', type: 'Individual', keyFeatures: ['UPI fraud cover', 'Social media hacking', 'Phishing protection', 'Legal support'], premiumRange: '₹400-4,500', rating: 4.3, claimRatio: 96.0 },
+            { id: 'tata-cyber', insurerId: 'tata', insurerName: 'Tata AIG', productName: 'Cyber Insurance', type: 'Business', keyFeatures: ['Data breach liability', 'Ransomware cover', 'Business interruption', 'Forensic investigation'], premiumRange: '₹5,000-50,000', rating: 4.5, claimRatio: 94.0 }
+        ]
+    }
+};
+
+// AI Classification endpoint
+app.post('/api/policies/classify', async (req, res) => {
+    const { vehicleType, userPreferences, budget, coverage } = req.body;
+    
+    // Get policies based on vehicle type or all if not specified
+    let policiesToClassify = [];
+    
+    if (vehicleType) {
+        // Map vehicle type to insurance category
+        const categoryMap = {
+            'car': 'motor', '4W': 'motor', 'motor': 'motor',
+            'bike': 'motor', '2W': 'motor', 'scooter': 'motor',
+            'health': 'health', 'medical': 'health',
+            'life': 'life', 'term': 'life',
+            'travel': 'travel', 'trip': 'travel',
+            'home': 'home', 'house': 'home',
+            'cyber': 'cyber', 'digital': 'cyber'
+        };
+        const category = categoryMap[vehicleType.toLowerCase()];
+        if (category && INDIAN_INSURANCE_POLICIES[category]) {
+            policiesToClassify = INDIAN_INSURANCE_POLICIES[category].policies;
+        }
+    } else {
+        // Return all policies across all categories
+        for (const cat of Object.values(INDIAN_INSURANCE_POLICIES)) {
+            policiesToClassify.push(...cat.policies);
+        }
+    }
+    
+    // Use AI to classify and rank policies based on user preferences
+    let aiClassification = '';
+    try {
+        const prefText = userPreferences ? `User preferences: ${JSON.stringify(userPreferences)}. Budget: ${budget || 'not specified'}. Coverage: ${coverage || 'standard'}` : 'General ranking';
+        const policiesText = policiesToClassify.map(p => `${p.insurerName} - ${p.productName}: Premium ${p.premiumRange}, Rating ${p.rating}, Claim Ratio ${p.claimRatio}%, Features: ${p.keyFeatures.join(', ')}`).join('; ');
+        
+        const aiRes = await axios.post(
+            'https://openrouter.ai/api/v1/chat/completions',
+            {
+                model: 'google/gemini-2.0-flash-001',
+                messages: [
+                    {
+                        role: 'system',
+                        content: 'You are an AI insurance expert for Insurix.India. Classify and rank insurance policies based on user needs. Provide clear categories: "Best Value", "Best Coverage", "Best for Claims". Keep responses short and practical. Use ₹ symbol.'
+                    },
+                    {
+                        role: 'user',
+                        content: `Classify these Indian insurance policies for ${vehicleType || 'general'}: ${policiesText}. ${prefText}`
+                    }
+                ],
+                temperature: 0.7,
+                max_tokens: 300
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                    'Content-Type': 'application/json',
+                    'HTTP-Referer': 'https://insurix.india',
+                    'X-Title': 'Insurix Policy Classifier'
+                },
+                timeout: 15000
+            }
+        );
+        aiClassification = aiRes.data?.choices?.[0]?.message?.content || '';
+    } catch (e) {
+        // Fallback classification
+        aiClassification = 'Based on our analysis, we recommend policies with high claim settlement ratios and features matching your requirements. Contact our AI assistant for personalized recommendations.';
+    }
+    
+    // Classify policies into categories
+    const classified = {
+        bestValue: policiesToClassify.filter(p => p.rating >= 4.3 && parseInt(p.premiumRange.replace(/[₹,]/g, '').split('-')[0]) < 10000).slice(0, 3),
+        bestCoverage: policiesToClassify.filter(p => p.claimRatio >= 96).slice(0, 3),
+        bestClaims: policiesToClassify.filter(p => p.claimRatio >= 98).slice(0, 3),
+        topRated: [...policiesToClassify].sort((a, b) => b.rating - a.rating).slice(0, 3)
+    };
+    
+    res.json({
+        success: true,
+        policies: policiesToClassify,
+        classification: {
+            categories: ['Best Value', 'Best Coverage', 'Best Claims', 'Top Rated'],
+            classified,
+            aiAnalysis: aiClassification
+        },
+        metadata: {
+            totalPolicies: policiesToClassify.length,
+            categories: vehicleType ? [INDIAN_INSURANCE_POLICIES[Object.keys(INDIAN_INSURANCE_POLICIES).find(k => INDIAN_INSURANCE_POLICIES[k].policies.some(p => policiesToClassify.includes(p)))]?.category || 'Motor'] : Object.keys(INDIAN_INSURANCE_POLICIES),
+            lastUpdated: new Date().toISOString()
+        }
+    });
+});
+
+// Get all Indian insurance policies
+app.get('/api/policies/india', (req, res) => {
+    const { category, insurer } = req.query;
+    
+    let result = INDIAN_INSURANCE_POLICIES;
+    
+    if (category && result[category]) {
+        result = { [category]: result[category] };
+    }
+    
+    if (insurer) {
+        // Filter by insurer across all categories
+        const filtered = {};
+        for (const [cat, data] of Object.entries(INDIAN_INSURANCE_POLICIES)) {
+            const policies = data.policies.filter(p => p.insurerName.toLowerCase().includes(insurer.toLowerCase()));
+            if (policies.length > 0) {
+                filtered[cat] = { ...data, policies };
+            }
+        }
+        result = filtered;
+    }
+    
+    res.json({
+        success: true,
+        data: result,
+        count: Object.values(result).reduce((acc, cat) => acc + cat.policies.length, 0)
+    });
+});
+
 // ===== AI CHATBOT ENDPOINTS (OpenRouter + Azure Speech) =====
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 const OPENROUTER_MODEL = 'google/gemini-2.0-flash-001';
@@ -987,6 +1482,8 @@ const AZURE_SPEECH_KEY = process.env.AZURE_SPEECH_KEY || '';
 const AZURE_SPEECH_REGION = process.env.AZURE_SPEECH_REGION || 'eastasia';
 
 const INSURANCE_SYSTEM_PROMPT = `You are "Insurix" — the user's personal insurance buddy. Think of yourself like a chill, helpful friend who happens to know EVERYTHING about Indian insurance. You work for Insurix.India.
+
+YOU ARE AN EXPERT ON **ALL** TYPES OF INDIAN INSURANCE — motor, health, life, travel, home, cyber, commercial, marine, fire, liability, crop, and every government scheme. NEVER say you only deal with car/bike insurance. NEVER say "I'll connect you with someone" — YOU are the expert on ALL insurance.
 
 YOUR PERSONALITY:
 - Talk like a friendly buddy, NOT a formal corporate bot
@@ -997,41 +1494,238 @@ YOUR PERSONALITY:
 - Add relevant emojis naturally (don't overdo it)
 - Be encouraging and reassuring — insurance can be confusing, make it feel easy
 - If user seems confused, say "no stress, let me break it down simply"
-- Keep it SHORT — 2-3 sentences max, like a quick WhatsApp reply
+- Keep answers concise but informative — 3-5 sentences, like a WhatsApp reply from an expert friend
 
-CRITICAL — VEHICLE NUMBER DETECTION:
-- Users will often tell you their vehicle registration number in various ways:
+IMPORTANT — CONTEXT-AWARE RESPONSES:
+- ALWAYS stay on topic. If the user is asking about life insurance, health insurance, travel insurance, home insurance, cyber insurance, crop insurance, or ANY non-motor insurance topic, NEVER bring up vehicle numbers or ask for vehicle registration.
+- Only discuss vehicle numbers when the user EXPLICITLY mentions motor/vehicle insurance, bike, car, two-wheeler, or provides a vehicle registration number.
+- When the user asks follow-up questions like "what are the best plans?" or "ఉత్తమ ప్లాన్‌లు ఏమిటి?", refer to the PREVIOUS conversation context to understand which insurance type they are asking about. Do NOT switch topics.
+
+VEHICLE NUMBER DETECTION (ONLY for motor/vehicle insurance conversations):
+- If the user is talking about motor/vehicle/bike/car insurance AND provides a vehicle number, detect it.
+- Users may say numbers in various ways:
   * Direct: "TS09AB1234", "TS 09 AB 1234"
-  * Spoken/natural: "my vehicle number is TS zero nine AB one two three four"
-  * Partial: "my number is TS 09 AB 1234", "it is AP 28 CD 5678"
-  * Telugu: "నా వాహన నంబర్ TS09AB1234", "నా బైక్ నంబర్ TS zero nine AB one two three four"
+  * Spoken: "my vehicle number is TS zero nine AB one two three four"
+  * Telugu: "నా వాహన నంబర్ TS09AB1234"
   * Hindi: "मेरा वाहन नंबर TS09AB1234"
-  * With words for digits: "TS zero nine AB twelve thirty four" means TS09AB1234
-- When you detect ANY vehicle registration number in ANY format, you MUST:
-  1. Convert spoken digits to numbers: zero=0, one=1, two=2, three=3, four=4, five=5, six=6, seven=7, eight=8, nine=9
-  2. ALWAYS include the cleaned registration number in your reply using this EXACT format: [VEHICLE:XX00XX0000]
-     Example: If user says "TS zero nine AB one two three four", reply must contain [VEHICLE:TS09AB1234]
-  3. Then say something friendly like "Got it! Let me pull up your vehicle details real quick! 🔍"
-  4. Indian vehicle numbers follow: 2 letters (state) + 2 digits (district/RTO) + 1-2 letters (series) + 1-4 digits (number)
-     Examples: TS09AB1234, MH02CD5678, AP28EF9012, KA01HH1234, DL3CAB1234
-- This is your HIGHEST PRIORITY. Never miss a vehicle number. Always output the [VEHICLE:...] tag.
+- When you detect a vehicle number in a motor insurance conversation, include it as: [VEHICLE:XX00XX0000]
+- DO NOT ask for vehicle number unless the user is specifically discussing motor/vehicle insurance.
+- NEVER ask for vehicle number when discussing life, health, travel, home, cyber, crop, or any non-motor insurance.
 
-INSURANCE KNOWLEDGE:
-- Answer in the SAME language the user speaks (Telugu, English, or Hindi)
-- If user speaks Telugu, reply in Telugu script (తెలుగు)
-- Use real IRDAI data: TP rates, NCB slabs (20/25/35/45/50%), IDV depreciation
-- Recommend comprehensive for newer vehicles, TP-only for old ones
-- Mention real insurers: ICICI Lombard, Bajaj Allianz, HDFC ERGO, Digit, Acko, New India
-- Premium quick math:
-  * TP for ≤75cc: ₹538, 75-150cc: ₹714, 150-350cc: ₹1,366, >350cc: ₹2,804
-  * OD rate: ~2.2-3.5% of IDV, + GST @18%
-- For claims: explain cashless vs reimbursement simply
-- If unsure, say "Hmm I'm not 100% sure on that one — let me connect you with an expert who can help better!"`;
+COMPREHENSIVE INDIAN INSURANCE KNOWLEDGE:
+Answer in the SAME language the user speaks (Telugu, English, or Hindi). If user speaks Telugu, reply in Telugu script.
+
+=== 1. MOTOR / VEHICLE INSURANCE ===
+Types: Third Party (TP) Only, Comprehensive (OD + TP), Standalone OD
+Vehicles: Two-wheelers, Cars, Commercial (trucks, buses, autos, tractors), Electric Vehicles (EV)
+
+IRDAI Third Party Premium Rates (Two-Wheeler):
+• ≤75cc: ₹538/yr | 75-150cc: ₹714/yr | 150-350cc: ₹1,366/yr | >350cc: ₹2,804/yr
+IRDAI TP Rates (Private Car):
+• ≤1000cc: ₹2,094/yr | 1000-1500cc: ₹3,416/yr | >1500cc: ₹7,897/yr
+Commercial Vehicles: TP rates are higher, based on GVW (Gross Vehicle Weight) and use.
+EV Vehicles: 15% discount on OD premium as per IRDAI guidelines.
+
+OD Premium: ~2.2-3.5% of IDV + 18% GST
+IDV Depreciation (IRDAI): 6mo: 5%, 1yr: 15%, 2yr: 20%, 3yr: 30%, 4yr: 40%, 5yr+: 50%
+NCB Slabs: 1yr: 20%, 2yr: 25%, 3yr: 35%, 4yr: 45%, 5yr+: 50% (on OD only)
+
+Add-ons: Zero Depreciation, Engine Protect, RSA (Roadside Assistance), Key Replacement, Consumables Cover, Return to Invoice, NCB Protector, Tyre Protect, PA Cover for passengers, EMI Protector.
+
+Top Motor Insurers: ICICI Lombard, Bajaj Allianz, HDFC ERGO, Digit, Acko, New India Assurance, United India, Tata AIG, SBI General, National Insurance, Reliance General, Kotak Mahindra, Cholamandalam MS.
+
+=== 2. HEALTH INSURANCE ===
+Types: Individual Health, Family Floater, Senior Citizen, Critical Illness, Personal Accident, Group Health, Maternity, Top-Up / Super Top-Up, Hospital Cash (Daily Allowance), Disease-Specific (Cancer, Heart, Diabetes).
+
+Coverage: ₹2 Lakh to ₹5 Crore+
+Premiums: Individual starts ~₹5,000-₹8,000/yr for ₹5L cover (age 25-35)
+Family Floater: ₹10,000-₹25,000/yr for ₹10L cover
+Senior Citizen (60+): ₹15,000-₹50,000/yr depending on age and coverage.
+
+Key Features:
+• Cashless treatment at 7,000-20,000+ network hospitals
+• Pre-existing diseases covered after 2-4 years waiting period
+• No Claim Bonus: 5-50% increase in sum insured each claim-free year
+• Day-care procedures covered (cataract, dialysis, chemo etc.)
+• AYUSH (Ayurveda, Yoga, Unani, Siddha, Homeopathy) treatment covered
+• Ambulance charges: ₹2,000-₹5,000 per hospitalization
+• Room rent: Some plans have limits (1% or 2% of SI), many now offer no capping
+• Maternity Cover: ₹25,000-₹75,000 (Normal/C-Section), newborn cover from Day 1
+• Restoration Benefit: Sum insured gets restored if exhausted
+• Free Annual Health Checkup
+
+Waiting Periods: Initial 30 days, Pre-existing 2-4 yrs, Specific diseases 1-2 yrs
+Tax Benefit: Section 80D — ₹25,000 (self/family), ₹50,000 (senior citizens), ₹1,00,000 max (self+parents both senior)
+
+Top Health Insurers: Star Health, Niva Bupa (formerly Max Bupa), HDFC ERGO Health, ICICI Lombard, Bajaj Allianz Health, Care Health (formerly Religare), Aditya Birla Health, ManipalCigna, Tata AIG Health, New India Assurance, United India, SBI Health.
+
+=== 3. LIFE INSURANCE ===
+Types: Term Life, Whole Life, Endowment Plans, ULIPs (Unit Linked), Money Back Plans, Pension/Annuity Plans, Child Plans, Return of Premium (TROP) Term Plans, Group Term Life, Micro Insurance.
+
+Term Life Insurance:
+• Cheapest form — pure protection, no maturity benefit
+• Coverage: ₹25 Lakh to ₹25 Crore+
+• Premium: ₹490-₹1,500/month for ₹1 Crore cover (age 25-35, non-smoker)
+• Claim Settlement Ratios (2023-24): LIC: 98.6%, Max Life: 99.6%, HDFC Life: 99.1%, ICICI Pru: 98.5%, Tata AIA: 99.1%, SBI Life: 97.8%
+• Premium Payment: Regular, Limited Pay (5/7/10/12/15), Single Pay
+• Death Benefit Options: Lump sum, Monthly income, Lump sum + Monthly income, Increasing monthly income
+• Riders: Accidental Death, Critical Illness, Disability Waiver, Terminal Illness
+
+Women's Term Insurance: Up to 5% discount on premiums for women.
+Endowment Plans: LIC Jeevan Labh, LIC New Endowment, HDFC Sanchay Plus
+ULIPs: Investment + Insurance; 5-year lock-in; equity/debt/balanced fund options
+Money Back Plans: Periodic payouts every 3-5 years; good for liquidity
+Child Plans: LIC Jeevan Tarun, HDFC YoungStar, ICICI Pru Smart Kid
+Retirement/Pension: NPS, LIC Jeevan Shanti, Tata AIA Fortune Pension, Annuity plans
+
+Tax Benefits:
+• Section 80C: Premium up to ₹1.5 Lakh/yr deductible
+• Section 80CCD(1B): Additional ₹50,000 for NPS
+• Section 10(10D): Maturity proceeds tax-free (conditions apply)
+
+Top Life Insurers: LIC, HDFC Life, ICICI Prudential, SBI Life, Max Life, Tata AIA, Bajaj Allianz Life, Kotak Mahindra Life, PNB MetLife, Aditya Birla Sun Life, Canara HSBC, Edelweiss Tokio.
+
+=== 4. TRAVEL INSURANCE ===
+Types: Single Trip, Multi Trip (Annual), Student Travel, Senior Citizen Travel, Group Travel, Domestic Travel, Schengen Travel.
+
+Coverage: Medical expenses abroad, trip cancellation, baggage loss/delay, flight delay, passport loss, emergency evacuation, personal liability, adventure sports cover.
+Sum Insured: $50,000 to $5,00,000 (international); ₹2L to ₹25L (domestic)
+Premium: International starts ₹300-₹1,000/day; Domestic starts ₹100-₹300/day
+Schengen Visa: Mandatory travel insurance with minimum €30,000 medical cover
+
+Top Travel Insurers: Bajaj Allianz, ICICI Lombard, HDFC ERGO, Tata AIG, Care Health, Digit, Star Health, Reliance General.
+
+=== 5. HOME INSURANCE ===
+Types: Standard Fire & Special Perils Policy, Comprehensive Home Insurance, Householder's Policy.
+
+Coverage: Building structure, contents (furniture, electronics, jewelry), fire, flood, earthquake, storm, burglary, theft, third-party liability, temporary accommodation, rent for alternate home.
+Sum Insured: Based on property value — ₹10L to ₹5Cr+
+Premium: ₹1,000-₹10,000/yr for ₹25L-₹1Cr cover
+Exclusions: War, nuclear risks, wear & tear, termites, pets damage
+
+Top Home Insurers: HDFC ERGO, ICICI Lombard, Bajaj Allianz, SBI General, Tata AIG, New India Assurance, Reliance General.
+
+=== 6. CYBER / DIGITAL INSURANCE ===
+Coverage: Financial fraud, identity theft, phishing attacks, social media hacking, cyber bullying, malware attacks, data breach, unauthorized transactions, cyber extortion.
+Sum Insured: ₹50,000 to ₹1 Crore
+Premium: ₹500-₹5,000/yr
+Growing rapidly due to UPI fraud and digital banking.
+
+Top Cyber Insurers: HDFC ERGO, Bajaj Allianz, ICICI Lombard, Tata AIG.
+
+=== 7. COMMERCIAL / BUSINESS INSURANCE ===
+Types: Shop Insurance, Office Package, Fire Insurance, Burglary Insurance, Marine (Cargo & Hull), Professional Indemnity (Doctors, CAs, Lawyers), Directors & Officers (D&O) Liability, Workmen's Compensation, Product Liability, Public Liability, Keyman Insurance, Fidelity Guarantee.
+
+Marine Insurance: Covers goods in transit (road, rail, sea, air); Marine Cargo (goods) vs Marine Hull (ship/vessel).
+Professional Indemnity: For professionals — doctors, CA, CS, lawyers, IT consultants — covers malpractice suits, errors & omissions.
+Shop Insurance / SME Package: Fire, burglary, stock damage, content, machinery breakdown, business interruption.
+
+=== 8. CROP / AGRICULTURAL INSURANCE ===
+Pradhan Mantri Fasal Bima Yojana (PMFBY):
+• India's largest crop insurance scheme
+• Farmer premium: Kharif 2%, Rabi 1.5%, Horticulture 5%
+• Government pays rest of premium
+• Covers: Natural calamities, pests, diseases, prevented sowing, post-harvest losses, localized calamities
+• Season-wise enrollment (Kharif: April-July, Rabi: Oct-Dec)
+• Over 5 Crore farmers enrolled
+
+Weather-Based Crop Insurance Scheme (WBCIS): Payouts based on weather parameters.
+Restructured Weather Based Crop Insurance: Covers rainfall deviation, frost, humidity etc.
+
+=== 9. GOVERNMENT INSURANCE SCHEMES ===
+1. Pradhan Mantri Jeevan Jyoti Bima Yojana (PMJJBY):
+   - Life insurance for ₹2 Lakh at just ₹436/yr
+   - Ages 18-55, auto-debit from bank account
+   - Death cover (any cause)
+
+2. Pradhan Mantri Suraksha Bima Yojana (PMSBY):
+   - Accidental death & disability cover
+   - ₹2 Lakh (death), ₹1 Lakh (partial disability)
+   - Just ₹20/year! Cheapest in the world
+   - Ages 18-70
+
+3. Ayushman Bharat (PM-JAY):
+   - World's largest health insurance scheme
+   - ₹5 Lakh/family/year for secondary & tertiary hospitalization
+   - Free for 12 crore poor families (BPL)
+   - 25,000+ empaneled hospitals
+   - Covers pre-existing diseases from Day 1
+   - No age limit
+
+4. Atal Pension Yojana (APY):
+   - Pension of ₹1,000-₹5,000/month after 60
+   - Ages 18-40, contribution based on pension and age
+   - Government co-contributes 50% for eligible
+
+5. Employees' State Insurance (ESI):
+   - For employees earning ≤₹21,000/month
+   - Medical, maternity, disability, dependant benefit
+   - Employee: 0.75%, Employer: 3.25%
+
+6. Central Government Health Scheme (CGHS):
+   - For central govt employees and pensioners
+   - Cashless treatment at empaneled hospitals
+
+7. Pradhan Mantri Vaya Vandana Yojana (PMVVY):
+   - Pension scheme for senior citizens (60+)
+   - Guaranteed 7.4% return through LIC
+
+=== 10. TAX BENEFITS ON INSURANCE ===
+Section 80C: Life insurance premiums up to ₹1.5 Lakh
+Section 80D: Health insurance premiums — ₹25K (self/family) + ₹25K-₹50K (parents)
+Section 80CCC: Pension fund contributions up to ₹1.5L
+Section 80CCD(1): NPS contributions — 10% of salary (salaried) or 20% (self-employed) up to ₹1.5L
+Section 80CCD(1B): Additional ₹50,000 NPS deduction
+Section 80CCD(2): Employer NPS contribution — 10% of salary (14% for Govt)
+Section 10(10D): Maturity/death benefit tax-free if premium ≤10% of SA
+Section 80DD: ₹75K-₹1.25L for disabled dependant insurance
+Section 80DDB: ₹40K-₹1L for specified diseases treatment
+
+=== 11. ADD-ONS & RIDERS ===
+Motor Add-ons: Zero Dep, Engine Protect, RSA, Key Loss, Consumables, Return to Invoice, NCB Protector, Tyre Protect, PA Cover, EMI Protector, Geo-Extension, Daily Allowance.
+Health Riders: Critical Illness, Hospital Cash, Maternity, OPD Cover, Dental, Mental Health.
+Life Riders: Accidental Death Benefit, Critical Illness, Waiver of Premium, Terminal Illness, Income Benefit.
+
+=== 12. CLAIMS PROCESS ===
+Motor Claims: Intimate insurer → FIR (if accident/theft) → Surveyor inspection → Cashless repair at network garage OR reimbursement → Settlement in 7-30 days
+Health Claims: Pre-authorization (cashless) or post-hospitalization bills (reimbursement) → Document submission → TPA verification → Settlement
+Life Claims: Nominee intimation → Death certificate + policy docs → Insurer investigation → Settlement (usually 30 days)
+Travel Claims: Intimate within 24-48 hours → Medical bills / police report → Document submission → Settlement
+
+Cashless vs Reimbursement:
+• Cashless: No upfront payment, insurer pays hospital directly at network hospitals
+• Reimbursement: Pay first, submit bills, get money back (takes 15-30 days)
+
+=== 13. KEY INSURANCE TERMS ===
+IDV: Insured Declared Value (market value of vehicle)
+NCB: No Claim Bonus (discount for claim-free years)
+TP: Third Party (liability to other person/vehicle)
+OD: Own Damage (covers your vehicle)
+Sum Insured: Maximum amount insurer will pay
+Deductible: Amount you pay before insurance kicks in
+Co-payment: % of claim amount you share with insurer
+Waiting Period: Time before coverage starts for certain conditions
+Free Look Period: 15-30 days to cancel and get full refund
+Grace Period: Extra time to pay overdue premium
+Portability: Switch insurer without losing benefits (health insurance)
+Subrogation: Insurer's right to recover from third party
+
+RESPONSE RULES:
+- NEVER say "I mostly deal with car/bike insurance" — you know ALL insurance
+- NEVER say "I'll connect you with someone" — YOU are the expert
+- NEVER ask for vehicle number when the topic is NOT motor/vehicle insurance
+- ALWAYS maintain conversation context — if user asked about life insurance, follow-up questions are about life insurance unless they explicitly change topic
+- When user asks "best plans" or "which is best" — recommend specific plans with names, premiums, and claim settlement ratios for the insurance type being discussed
+- If you're not 100% sure about a very specific policy detail, say "That's a great question! Here's what I know... For the exact latest numbers, I'd recommend checking the insurer's website or IRDAI portal."
+- Provide specific numbers, rates, and names wherever possible
+- Compare plans when the user seems confused about choices
+- Recommend specific actions based on user's age/situation
+- Mention tax benefits wherever relevant`;
 
 // OpenRouter AI Chat
 app.post('/api/chat', async (req, res) => {
     const { message, history, language } = req.body;
-    
+
     if (!message) {
         return res.status(400).json({ success: false, error: 'Message required' });
     }
@@ -1110,7 +1804,7 @@ app.post('/api/chat', async (req, res) => {
 // Azure TTS - Convert text to speech
 app.post('/api/tts', async (req, res) => {
     const { text, language } = req.body;
-    
+
     if (!text) {
         return res.status(400).json({ success: false, error: 'Text required' });
     }
@@ -1123,7 +1817,7 @@ app.post('/api/tts', async (req, res) => {
     const voice = voiceMap[language] || voiceMap.en;
     const langCode = language === 'te' ? 'te-IN' : language === 'hi' ? 'hi-IN' : 'en-US';
 
-    const escapedText = text.replace(/[<>&'"]/g, c => ({'<':'&lt;','>':'&gt;','&':'&amp;',"'":"&apos;",'"':'&quot;'}[c]));
+    const escapedText = text.replace(/[<>&'"]/g, c => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', "'": "&apos;", '"': '&quot;' }[c]));
 
     const ssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xml:lang='${langCode}'>
         <voice name='${voice}'>
@@ -1189,12 +1883,12 @@ app.get('/', (req, res) => {
 
 // ===== IRDAI INSURER CLAIM SETTLEMENT DATA (FY 2024-25 Public Disclosures) =====
 const IRDAI_INSURER_DATA = {
-    hdfc:  { name: 'HDFC ERGO',    overallCSR: 97.8, healthCSR: 96.2, motorCSR: 98.5, avgSettlementDays: 12, ageWiseRejection: { '18-30': 2.1, '31-45': 3.8, '46-60': 6.5, '60+': 11.2 }, nonMedicalOverhead: 0.08, roomRentCapped: false, restorationBenefit: true,  cashlessApprovalRate: 0.91, networkHospitals: 13000, networkGarages: 7200  },
-    icici: { name: 'ICICI Lombard', overallCSR: 96.5, healthCSR: 95.1, motorCSR: 97.2, avgSettlementDays: 15, ageWiseRejection: { '18-30': 2.5, '31-45': 4.2, '46-60': 7.1, '60+': 12.8 }, nonMedicalOverhead: 0.12, roomRentCapped: true,  restorationBenefit: true,  cashlessApprovalRate: 0.87, networkHospitals: 11500, networkGarages: 6500  },
-    bajaj: { name: 'Bajaj Allianz', overallCSR: 98.1, healthCSR: 97.0, motorCSR: 98.8, avgSettlementDays: 10, ageWiseRejection: { '18-30': 1.8, '31-45': 3.2, '46-60': 5.9, '60+': 10.5 }, nonMedicalOverhead: 0.06, roomRentCapped: false, restorationBenefit: true,  cashlessApprovalRate: 0.93, networkHospitals: 12000, networkGarages: 5800  },
-    tata:  { name: 'Tata AIG',     overallCSR: 95.2, healthCSR: 93.8, motorCSR: 96.1, avgSettlementDays: 18, ageWiseRejection: { '18-30': 3.0, '31-45': 4.8, '46-60': 7.8, '60+': 13.5 }, nonMedicalOverhead: 0.10, roomRentCapped: true,  restorationBenefit: false, cashlessApprovalRate: 0.84, networkHospitals: 10000, networkGarages: 5200  },
-    sbi:   { name: 'SBI General',  overallCSR: 94.8, healthCSR: 92.5, motorCSR: 95.8, avgSettlementDays: 22, ageWiseRejection: { '18-30': 3.5, '31-45': 5.5, '46-60': 8.5, '60+': 14.2 }, nonMedicalOverhead: 0.14, roomRentCapped: true,  restorationBenefit: false, cashlessApprovalRate: 0.79, networkHospitals: 8500,  networkGarages: 4800  },
-    max:   { name: 'Max Life',     overallCSR: 96.0, healthCSR: 94.5, motorCSR: 96.8, avgSettlementDays: 16, ageWiseRejection: { '18-30': 2.8, '31-45': 4.5, '46-60': 7.5, '60+': 12.0 }, nonMedicalOverhead: 0.09, roomRentCapped: false, restorationBenefit: true,  cashlessApprovalRate: 0.88, networkHospitals: 9500,  networkGarages: 4500  }
+    hdfc: { name: 'HDFC ERGO', overallCSR: 97.8, healthCSR: 96.2, motorCSR: 98.5, avgSettlementDays: 12, ageWiseRejection: { '18-30': 2.1, '31-45': 3.8, '46-60': 6.5, '60+': 11.2 }, nonMedicalOverhead: 0.08, roomRentCapped: false, restorationBenefit: true, cashlessApprovalRate: 0.91, networkHospitals: 13000, networkGarages: 7200 },
+    icici: { name: 'ICICI Lombard', overallCSR: 96.5, healthCSR: 95.1, motorCSR: 97.2, avgSettlementDays: 15, ageWiseRejection: { '18-30': 2.5, '31-45': 4.2, '46-60': 7.1, '60+': 12.8 }, nonMedicalOverhead: 0.12, roomRentCapped: true, restorationBenefit: true, cashlessApprovalRate: 0.87, networkHospitals: 11500, networkGarages: 6500 },
+    bajaj: { name: 'Bajaj Allianz', overallCSR: 98.1, healthCSR: 97.0, motorCSR: 98.8, avgSettlementDays: 10, ageWiseRejection: { '18-30': 1.8, '31-45': 3.2, '46-60': 5.9, '60+': 10.5 }, nonMedicalOverhead: 0.06, roomRentCapped: false, restorationBenefit: true, cashlessApprovalRate: 0.93, networkHospitals: 12000, networkGarages: 5800 },
+    tata: { name: 'Tata AIG', overallCSR: 95.2, healthCSR: 93.8, motorCSR: 96.1, avgSettlementDays: 18, ageWiseRejection: { '18-30': 3.0, '31-45': 4.8, '46-60': 7.8, '60+': 13.5 }, nonMedicalOverhead: 0.10, roomRentCapped: true, restorationBenefit: false, cashlessApprovalRate: 0.84, networkHospitals: 10000, networkGarages: 5200 },
+    sbi: { name: 'SBI General', overallCSR: 94.8, healthCSR: 92.5, motorCSR: 95.8, avgSettlementDays: 22, ageWiseRejection: { '18-30': 3.5, '31-45': 5.5, '46-60': 8.5, '60+': 14.2 }, nonMedicalOverhead: 0.14, roomRentCapped: true, restorationBenefit: false, cashlessApprovalRate: 0.79, networkHospitals: 8500, networkGarages: 4800 },
+    max: { name: 'Max Life', overallCSR: 96.0, healthCSR: 94.5, motorCSR: 96.8, avgSettlementDays: 16, ageWiseRejection: { '18-30': 2.8, '31-45': 4.5, '46-60': 7.5, '60+': 12.0 }, nonMedicalOverhead: 0.09, roomRentCapped: false, restorationBenefit: true, cashlessApprovalRate: 0.88, networkHospitals: 9500, networkGarages: 4500 }
 };
 
 // High-theft zones by state (IIB Motor Theft Data 2024)
@@ -1525,8 +2219,8 @@ app.post('/api/vulnerability-assessment', (req, res) => {
             months: survivalRunwayMonths,
             label: survivalRunwayMonths >= 60 ? '5+ years of crisis coverage'
                 : survivalRunwayMonths >= 24 ? `${Math.round(survivalRunwayMonths / 12)} years of crisis coverage`
-                : survivalRunwayMonths >= 6 ? `${survivalRunwayMonths} months — dangerously low`
-                : 'Less than 6 months — EMERGENCY',
+                    : survivalRunwayMonths >= 6 ? `${survivalRunwayMonths} months — dangerously low`
+                        : 'Less than 6 months — EMERGENCY',
             monthlyBurn
         },
         gaps: {
@@ -1559,7 +2253,7 @@ app.post('/api/tco-simulator', (req, res) => {
     }
 
     if (!vehicleData && make && model) {
-        const vInfo = VEHICLE_DATABASE[make]?.[model];
+        const vInfo = VEHICLE_DATABASE[make]?.[model] || CAR_DATABASE[make]?.[model];
         if (vInfo) {
             const vAge = new Date().getFullYear() - (parseInt(year) || 2023);
             let dep = vAge <= 0 ? 0 : vAge <= 1 ? 15 : vAge <= 2 ? 20 : vAge <= 3 ? 30 : vAge <= 4 ? 40 : 50;
@@ -1726,6 +2420,933 @@ app.post('/api/tco-simulator', (req, res) => {
     });
 });
 
+// =====================================================================
+// ===== PHASE 3: AI DIFFERENTIATORS ==================================
+// =====================================================================
+
+// ===== 3.1 POLICY DECODER — Clause Simplifier with Impact Scoring =====
+
+// Structured policy clause database — each clause has name, simplified plain-language, impactScore (1-10)
+const POLICY_CLAUSE_DATABASE = {
+    'motor_comprehensive': {
+        name: 'Motor Comprehensive Policy',
+        standardClauses: [
+            { name: 'Third-Party Bodily Injury', simplified: 'If your vehicle injures or kills someone, the insurer pays unlimited compensation. This is mandatory under Motor Vehicles Act 2019 — you cannot drive without this.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'Third-Party Property Damage', simplified: 'Damage your vehicle causes to someone else\'s property (car, wall, shop) is covered up to ₹7.5 lakh.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'Own Damage Cover', simplified: 'Your vehicle is protected against fire, theft, natural disasters (floods, earthquakes), riots, and accident damage. This is the main reason you buy comprehensive.', level: 'green', category: 'Coverage', impactScore: 3 },
+            { name: 'Personal Accident Cover', simplified: 'Owner-driver gets ₹15 lakh cover for accidental death or disability. This is mandatory by IRDAI — cannot be removed.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'Parts Depreciation Deduction', simplified: 'When you claim, the insurer deducts depreciation on EVERY replaced part — rubber 50%, plastic 30%, metal 0-50% based on vehicle age. You pay the difference from your pocket.', level: 'red', category: 'Depreciation', impactScore: 9, financialImpact: 'On a ₹50,000 bumper repair: you pay ₹15,000-25,000 from pocket. Only Zero-Dep add-on eliminates this.' },
+            { name: 'Mechanical Breakdown Exclusion', simplified: 'If your engine seizes, gearbox fails, or electrical system breaks down — NOT covered. Even waterlogging damage to engine is excluded unless you buy Engine Protect add-on separately.', level: 'yellow', category: 'Exclusion', impactScore: 7, financialImpact: 'Engine replacement costs ₹50,000-3,00,000. Claim rejected without Engine Protect add-on.' },
+            { name: 'DUI/Intoxication Exclusion', simplified: 'Driving under the influence of alcohol or drugs? Your ENTIRE claim is rejected — no matter how severe the damage. Zero payout.', level: 'yellow', category: 'Exclusion', impactScore: 6 },
+            { name: 'Commercial Use Voids Policy', simplified: 'Using your personal vehicle for Ola/Uber/delivery even ONCE can void your entire policy. One Swiggy delivery trip = ₹0 claim on a ₹8L car.', level: 'yellow', category: 'Exclusion', impactScore: 7 },
+            { name: '24-Hour Claim Filing Deadline', simplified: 'You must report the incident to the insurer within 24 hours. Miss this deadline? They can legally reject even a genuine ₹2 lakh claim.', level: 'yellow', category: 'Process', impactScore: 6, financialImpact: 'Late reporting is the #2 reason for claim rejection in India (IRDAI data).' },
+            { name: 'Wear & Tear Exclusion', simplified: 'Normal aging, rust, gradual deterioration, and manufacturing defects are not covered. Insurance is for sudden, accidental damage only.', level: 'green', category: 'Exclusion', impactScore: 2 },
+            { name: 'IDV Depreciates With Age', simplified: 'Your car\'s insured value (IDV) drops 10-50% as it ages. A 5-year-old car worth ₹8L in market has IDV of only ₹4L — that\'s the MAX you\'ll ever get in a total loss claim.', level: 'red', category: 'Depreciation', impactScore: 8, financialImpact: 'Year 5+: Your ₹8L car is insured for ₹4L. Gap = ₹4L out of pocket in total loss.' },
+            { name: 'Compulsory Deductible', simplified: 'First ₹1,000-5,000 of EVERY claim is your expense (self-paid). Small damages below this threshold aren\'t worth claiming at all.', level: 'yellow', category: 'Deductible', impactScore: 4, financialImpact: 'Windshield crack costing ₹3K? After deductible, insurer pays ₹2K — and your NCB is lost (worth more).' },
+            { name: 'War & Nuclear Exclusion', simplified: 'Damage from war, nuclear events, and certain acts of terrorism are not covered. Standard global exclusion across all insurers.', level: 'green', category: 'Exclusion', impactScore: 1 }
+        ],
+        insurerSpecific: {
+            hdfc: { roomRentCap: false, zeroDep: 'add-on', roadside: 'included', engineProtect: 'add-on', returnToInvoice: 'add-on', ncbProtect: 'add-on', personalBelongings: 'up to ₹15,000', uniqueClause: 'Windshield cover without affecting NCB' },
+            icici: { roomRentCap: false, zeroDep: 'add-on', roadside: 'add-on', engineProtect: 'add-on', returnToInvoice: 'add-on', ncbProtect: 'add-on', personalBelongings: 'up to ₹10,000', uniqueClause: '20% co-pay on claims above ₹50,000 for certain plans' },
+            bajaj: { roomRentCap: false, zeroDep: 'add-on', roadside: 'included', engineProtect: 'add-on', returnToInvoice: 'add-on', ncbProtect: 'add-on', personalBelongings: 'up to ₹20,000', uniqueClause: 'Fastest cashless — 15 min at network garages' },
+            tata: { roomRentCap: false, zeroDep: 'add-on', roadside: 'add-on', engineProtect: 'add-on', returnToInvoice: 'add-on', ncbProtect: 'add-on', personalBelongings: 'up to ₹10,000', uniqueClause: 'Towing limited to 50km — beyond = self-paid' },
+            sbi: { roomRentCap: false, zeroDep: 'add-on', roadside: 'add-on', engineProtect: 'not available', returnToInvoice: 'not available', ncbProtect: 'add-on', personalBelongings: 'not covered', uniqueClause: 'Limited network garages (4,800) — longer cashless wait' },
+            max: { roomRentCap: false, zeroDep: 'add-on', roadside: 'add-on', engineProtect: 'add-on', returnToInvoice: 'add-on', ncbProtect: 'add-on', personalBelongings: 'up to ₹12,000', uniqueClause: 'NCB accumulation pauses if gap > 90 days in renewal' }
+        }
+    },
+    'health_individual': {
+        name: 'Individual Health Insurance',
+        standardClauses: [
+            { name: 'Hospitalization Cover', simplified: 'All medical expenses during hospital stay of 24+ hours are covered — room charges, surgeon fees, medicines, diagnostics. This is your core health insurance benefit.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'Pre & Post Hospitalization', simplified: 'Medical expenses 30-60 days BEFORE admission and 60-180 days AFTER discharge are covered. Includes diagnostics, follow-ups, and medicines related to the hospitalization.', level: 'green', category: 'Coverage', impactScore: 3 },
+            { name: 'Day-Care Procedures', simplified: 'Modern treatments that don\'t need overnight stay — chemotherapy, dialysis, cataract surgery, angioplasty — are covered. 500+ procedures listed by IRDAI.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'AYUSH Coverage', simplified: 'Alternative treatments (Ayurveda, Yoga, Unani, Siddha, Homeopathy) are covered when taken at a recognized hospital. IRDAI mandated this in 2019.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'Pre-Existing Disease Waiting', simplified: 'If you have diabetes, BP, thyroid, or ANY pre-existing condition — ZERO coverage for 2-4 years after buying the policy. Hospital bills during this period? 100% from your pocket.', level: 'red', category: 'Waiting Period', impactScore: 10, financialImpact: 'Diabetic patient hospitalized in Year 1: Full ₹2-5L bill out of pocket despite paying premiums.' },
+            { name: 'Specific Disease Waiting', simplified: 'Even WITHOUT pre-existing conditions, certain surgeries like hernia, cataracts, joint replacement have 1-2 year mandatory waiting periods. Claim in Year 1 = rejected.', level: 'red', category: 'Waiting Period', impactScore: 8, financialImpact: 'Knee replacement needed in Year 1? ₹3.5L out of pocket despite having ₹10L insurance.' },
+            { name: 'Room Rent Cap (Sub-limit)', simplified: 'Your room charges are capped at 1-2% of sum insured per day. If you choose a costlier room, the insurer proportionally reduces your ENTIRE bill — not just room charges.', level: 'red', category: 'Sub-limit', impactScore: 9, financialImpact: 'On ₹5L policy: room cap = ₹5K-10K/day. Choose ₹15K room → entire bill reduced by 33-50%. ₹3L surgery becomes ₹1.5L payout.' },
+            { name: 'Disease-Wise Sub-limits', simplified: 'Specific diseases (cataract, appendix, tonsils) are capped at 25-50% of your sum insured, regardless of actual hospital bill. Your ₹10L policy pays only ₹3-5L for these.', level: 'red', category: 'Sub-limit', impactScore: 8, financialImpact: 'Cataract surgery costs ₹80K-1.2L. Policy sub-limit: ₹40K-60K. You pay the gap.' },
+            { name: 'Co-Pay Clause', simplified: 'You must pay 10-20% of EVERY claim from your pocket, no matter how big the bill. This is in ADDITION to premium. Many plans hide this in fine print for senior citizens.', level: 'red', category: 'Co-pay', impactScore: 9, financialImpact: '₹5L surgery with 20% co-pay = ₹1L from YOUR pocket. You\'re NOT "fully covered."' },
+            { name: 'Cosmetic & Lifestyle Exclusions', simplified: 'Cosmetic surgery, plastic surgery, weight loss treatments, infertility treatments, and hormone therapy are NOT covered under any standard health plan.', level: 'yellow', category: 'Exclusion', impactScore: 4 },
+            { name: 'Dental & Vision Exclusion', simplified: 'Dental treatments (unless requiring hospitalization), spectacles, contact lenses, and hearing aids are NOT covered. Separate dental plans exist but are rare in India.', level: 'yellow', category: 'Exclusion', impactScore: 4 },
+            { name: 'Self-Inflicted Injury Exclusion', simplified: 'Self-inflicted injuries and attempted suicide are excluded. Standard exclusion across all health insurers globally.', level: 'green', category: 'Exclusion', impactScore: 1 },
+            { name: '30-Day Initial Waiting Period', simplified: 'NO claims (except accidents) for the first 30 days after buying the policy. Fall sick in the first month? Claim denied. Only accident-related hospitalization is covered immediately.', level: 'yellow', category: 'Waiting Period', impactScore: 5, financialImpact: 'Dengue/viral fever hospitalization in first month? Full bill from your pocket.' },
+            { name: 'Ambulance Charge Cap', simplified: 'Ambulance costs are capped at ₹2,000-5,000 per hospitalization. Private ambulances in metros cost ₹5,000-15,000. The excess is your expense.', level: 'yellow', category: 'Sub-limit', impactScore: 4, financialImpact: 'Emergency ambulance ₹12,000. Insurer pays ₹5,000 max. Gap: ₹7,000 from your pocket.' }
+        ],
+        insurerSpecific: {
+            hdfc: { waitingPeriodPED: '3 years', roomRentCap: 'No cap on select plans', coPay: 'None (most plans)', restorationBenefit: 'Yes — full SI restore once/year', noClaimBonus: '50% cumulative', networkHospitals: 13000, uniqueClause: 'Unlimited restoration on Optima Secure plan' },
+            icici: { waitingPeriodPED: '4 years', roomRentCap: '1% of SI/day on base plans', coPay: '20% on some plans for age 60+', restorationBenefit: 'Yes', noClaimBonus: '25% per year, max 100%', networkHospitals: 11500, uniqueClause: '20% mandatory co-pay for senior citizens on base plans — hidden cost' },
+            bajaj: { waitingPeriodPED: '2 years', roomRentCap: 'No cap', coPay: 'None', restorationBenefit: 'Yes', noClaimBonus: '50% cumulative', networkHospitals: 12000, uniqueClause: 'Shortest PED waiting period in industry — 2 years only' },
+            tata: { waitingPeriodPED: '3 years', roomRentCap: '1-2% of SI on base plan', coPay: '10% on specific diseases', restorationBenefit: 'Only on premium plans', noClaimBonus: '20% per year', networkHospitals: 10000, uniqueClause: '10% co-pay on specified diseases even without general co-pay clause' },
+            sbi: { waitingPeriodPED: '4 years', roomRentCap: '1% of SI', coPay: '20% on plans below ₹5L', restorationBenefit: 'No', noClaimBonus: '10% per year', networkHospitals: 8500, uniqueClause: 'No restoration benefit — once SI exhausted, zero cover for rest of year' },
+            max: { waitingPeriodPED: '3 years', roomRentCap: 'No cap on premium plans', coPay: 'None (premium plans)', restorationBenefit: 'Yes', noClaimBonus: '35% per year', networkHospitals: 9500, uniqueClause: 'NCB accumulation stops if any claim made — no partial NCB' }
+        }
+    },
+    'term_life': {
+        name: 'Term Life Insurance',
+        standardClauses: [
+            { name: 'Death Benefit Payout', simplified: 'If the insured person dies during the policy term, the nominee receives the full sum assured (₹50L-2Cr typically). This is the core purpose of term insurance — income replacement.', level: 'green', category: 'Coverage', impactScore: 1 },
+            { name: 'Terminal Illness Benefit', simplified: 'If diagnosed with a terminal illness (life expectancy <6 months), the full sum assured is paid immediately — before death. Available on most modern plans.', level: 'green', category: 'Coverage', impactScore: 2 },
+            { name: 'Accidental Death Benefit', simplified: 'Additional payout (often 2x) if death is due to accident. This is an add-on rider — not free. Check if your plan includes it or charges extra.', level: 'green', category: 'Rider', impactScore: 3 },
+            { name: 'Suicide Exclusion (Year 1)', simplified: 'If the insured commits suicide within the first 12 months, NO claim is paid. After 12 months, 80% of premiums paid are returned (IRDAI mandate).', level: 'red', category: 'Exclusion', impactScore: 7, financialImpact: 'Year 1 suicide: ₹0 payout. Year 2+: Only 80% of premiums returned, not sum assured.' },
+            { name: 'Non-Disclosure Penalty', simplified: 'If you hid medical conditions (diabetes, smoking, heart disease) during purchase — claim is REJECTED entirely. Insurer investigates medical history thoroughly at claim time.', level: 'red', category: 'Fraud', impactScore: 10, financialImpact: 'Hidden BP/diabetes = ₹0 payout on ₹1Cr policy. Family gets nothing. #1 claim rejection reason.' },
+            { name: 'Smoker vs Non-Smoker Premium', simplified: 'Smokers pay 40-80% higher premiums. If you declared non-smoker but test positive for nicotine at claim — rejected. Some insurers test cotinine levels post-mortem.', level: 'red', category: 'Underwriting', impactScore: 8, financialImpact: 'Smoker hiding status on ₹1Cr policy: ₹0 payout + all premiums lost.' },
+            { name: 'Grace Period (15-30 days)', simplified: 'If you miss a premium payment, you have 15-30 days to pay without losing cover. After grace period — policy LAPSES. All premiums paid are lost.', level: 'yellow', category: 'Process', impactScore: 6, financialImpact: 'Missed payment + grace period = policy lapsed. 5+ years of premiums = wasted.' },
+            { name: 'Hazardous Activity Exclusion', simplified: 'Death during skydiving, scuba diving, rock climbing, motor racing, or adventure sports — NOT covered. Some plans offer rider to include these.', level: 'yellow', category: 'Exclusion', impactScore: 5 },
+            { name: 'War & Aviation Exclusion', simplified: 'Death due to war, military service, or private aviation accidents is excluded. Commercial flight crashes ARE covered.', level: 'green', category: 'Exclusion', impactScore: 2 },
+            { name: 'Tax Benefit Section 80C', simplified: 'Premiums paid qualify for ₹1.5L tax deduction under Section 80C. Payout to nominee is tax-free under Section 10(10D). Major advantage of term insurance.', level: 'green', category: 'Benefit', impactScore: 1 },
+            { name: 'Premium Never Returned', simplified: 'Unlike endowment plans, term insurance pays NOTHING if you survive the term. ₹5L+ in premiums over 30 years = ₹0 return if you live. All money is risk-cover cost.', level: 'yellow', category: 'Structure', impactScore: 6, financialImpact: '30 years × ₹15K/year = ₹4.5L paid. If you survive: ₹0 back. That\'s the cost of protection.' }
+        ],
+        insurerSpecific: {
+            hdfc: { claimSettlementRatio: '98.5%', avgClaimTime: '14 days', minSumAssured: '₹25L', maxAge: 65, onlineDiscount: '8%', uniqueClause: 'Life-stage benefit — increase cover at marriage/child birth without medical test' },
+            icici: { claimSettlementRatio: '97.8%', avgClaimTime: '21 days', minSumAssured: '₹25L', maxAge: 65, onlineDiscount: '10%', uniqueClause: 'iProtect Smart — flexible payout options (lumpsum, monthly, or increasing)' },
+            tata: { claimSettlementRatio: '98.2%', avgClaimTime: '18 days', minSumAssured: '₹15L', maxAge: 65, onlineDiscount: '7%', uniqueClause: 'Lowest premiums in industry for non-smoker males under 35' },
+            max: { claimSettlementRatio: '99.3%', avgClaimTime: '12 days', minSumAssured: '₹25L', maxAge: 60, onlineDiscount: '5%', uniqueClause: 'Highest claim settlement ratio — 99.3%. Industry benchmark for trust.' },
+            sbi: { claimSettlementRatio: '95.0%', avgClaimTime: '28 days', minSumAssured: '₹20L', maxAge: 70, onlineDiscount: '3%', uniqueClause: 'SBI brand trust but claim processing significantly slower than private insurers' },
+            bajaj: { claimSettlementRatio: '97.0%', avgClaimTime: '22 days', minSumAssured: '₹25L', maxAge: 65, onlineDiscount: '6%', uniqueClause: 'Smart Protect Goal — plan adjusts cover as income grows' }
+        }
+    }
+};
+
+// POST /api/policy-decoder/upload — Real PDF/DOCX/TXT file upload + AI analysis
+app.post('/api/policy-decoder/upload', upload.single('policyFile'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, error: 'No file uploaded. Please upload a PDF, DOCX, or TXT file.' });
+        }
+
+        const { mimetype, buffer, originalname, size } = req.file;
+        let extractedText = '';
+
+        // ===== EXTRACT TEXT based on file type =====
+        if (mimetype === 'application/pdf') {
+            const pdfData = await pdfParse(buffer);
+            extractedText = pdfData.text;
+        } else if (mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mimetype === 'application/msword') {
+            const result = await mammoth.extractRawText({ buffer });
+            extractedText = result.value;
+        } else if (mimetype === 'text/plain') {
+            extractedText = buffer.toString('utf-8');
+        } else {
+            return res.status(400).json({ success: false, error: 'Unsupported file type. Upload PDF, DOCX, or TXT.' });
+        }
+
+        // Clean up extracted text
+        extractedText = extractedText.replace(/\s+/g, ' ').trim();
+
+        if (extractedText.length < 50) {
+            return res.status(400).json({ success: false, error: 'Could not extract enough text from the file. The document may be scanned/image-based or empty.' });
+        }
+
+        // ===== DETECT POLICY TYPE from text =====
+        // Use keyword scoring — highest score wins (avoids false positives like "care" matching "car")
+        const textLower = extractedText.toLowerCase();
+        let detectedType = 'general';
+        const typeScores = {
+            motor: 0,
+            health: 0,
+            term_life: 0,
+            travel: 0,
+            home: 0
+        };
+        // Motor keywords
+        if (textLower.includes('motor insurance') || textLower.includes('motor policy')) typeScores.motor += 5;
+        if (/\bown damage\b/.test(textLower)) typeScores.motor += 4;
+        if (/\bidv\b/.test(textLower)) typeScores.motor += 4;
+        if (textLower.includes('two wheeler') || textLower.includes('two-wheeler')) typeScores.motor += 4;
+        if (/\bvehicle\b/.test(textLower) && !textLower.includes('health')) typeScores.motor += 3;
+        if (/\bcar insurance\b/.test(textLower)) typeScores.motor += 4;
+        if (textLower.includes('third party liability')) typeScores.motor += 3;
+        if (textLower.includes('no claim bonus') && typeScores.motor > 0) typeScores.motor += 2;
+        if (textLower.includes('depreciation') && /\bparts\b/.test(textLower)) typeScores.motor += 3;
+
+        // Health keywords
+        if (textLower.includes('health insurance') || textLower.includes('health policy')) typeScores.health += 5;
+        if (textLower.includes('hospitalization')) typeScores.health += 4;
+        if (textLower.includes('room rent')) typeScores.health += 4;
+        if (/\bco-?pay\b/.test(textLower)) typeScores.health += 4;
+        if (textLower.includes('pre-existing disease') || textLower.includes('pre existing disease')) typeScores.health += 4;
+        if (textLower.includes('day care proced')) typeScores.health += 3;
+        if (textLower.includes('sub-limit') || textLower.includes('sublimit')) typeScores.health += 3;
+        if (textLower.includes('cashless') && textLower.includes('hospital')) typeScores.health += 3;
+        if (textLower.includes('sum insured') && textLower.includes('hospital')) typeScores.health += 3;
+        if (textLower.includes('restoration benefit')) typeScores.health += 3;
+        if (textLower.includes('waiting period')) typeScores.health += 2;
+
+        // Term life keywords
+        if (textLower.includes('term life') || textLower.includes('term plan')) typeScores.term_life += 5;
+        if (textLower.includes('death benefit')) typeScores.term_life += 5;
+        if (/\bnominee\b/.test(textLower)) typeScores.term_life += 4;
+        if (textLower.includes('sum assured')) typeScores.term_life += 4;
+        if (textLower.includes('life cover') || textLower.includes('life insurance')) typeScores.term_life += 4;
+        if (textLower.includes('claim settlement ratio')) typeScores.term_life += 3;
+        if (textLower.includes('suicide') && textLower.includes('exclusion')) typeScores.term_life += 2;
+
+        // Travel keywords
+        if (textLower.includes('travel insurance') || textLower.includes('travel policy')) typeScores.travel += 5;
+        if (/\btrip\b/.test(textLower) && textLower.includes('cancel')) typeScores.travel += 4;
+        if (textLower.includes('baggage')) typeScores.travel += 4;
+        if (textLower.includes('passport')) typeScores.travel += 3;
+
+        // Home keywords
+        if (textLower.includes('home insurance') || textLower.includes('property insurance')) typeScores.home += 5;
+        if (/\bburglary\b/.test(textLower)) typeScores.home += 4;
+        if (textLower.includes('fire') && textLower.includes('building')) typeScores.home += 4;
+
+        // Pick highest score
+        const maxScore = Math.max(...Object.values(typeScores));
+        if (maxScore >= 3) {
+            detectedType = Object.entries(typeScores).reduce((best, [type, score]) =>
+                score > best[1] ? [type, score] : best, ['general', 0]
+            )[0];
+        }
+
+        // ===== DETECT INSURER from text =====
+        let detectedInsurer = null;
+        const insurerPatterns = {
+            'HDFC ERGO': /hdfc\s*ergo/i,
+            'ICICI Lombard': /icici\s*lombard/i,
+            'Bajaj Allianz': /bajaj\s*allianz/i,
+            'Tata AIG': /tata\s*aig/i,
+            'SBI General': /sbi\s*(general|life)/i,
+            'Max Life': /max\s*(life|bupa)/i,
+            'LIC': /\blic\b|life insurance corporation/i,
+            'Star Health': /star\s*health/i,
+            'New India Assurance': /new india assurance/i,
+            'United India': /united india/i
+        };
+        for (const [name, pattern] of Object.entries(insurerPatterns)) {
+            if (pattern.test(extractedText)) {
+                detectedInsurer = name;
+                break;
+            }
+        }
+
+        // Truncate text for AI analysis (keep first 6000 chars for richer analysis)
+        const textForAI = extractedText.substring(0, 6000);
+
+        // ===== AI ANALYSIS via OpenRouter =====
+        const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+        let aiResult = null;
+
+        try {
+            const aiRes = await axios.post(
+                'https://openrouter.ai/api/v1/chat/completions',
+                {
+                    model: 'google/gemini-2.0-flash-001',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `You are an expert Indian insurance policy analyst for Insurix.India. You are analyzing REAL policy document text extracted from a PDF/DOCX file.
+
+Your job is to perform a DEEP, THOROUGH analysis and return a structured JSON response.
+
+Analyze the policy text and extract ALL of the following:
+
+1. "policyType": one of "motor", "health", "term_life", "travel", "home", "general"
+2. "insurer": The insurance company name if mentioned
+3. "policyName": The specific product/plan name if mentioned
+4. "fairnessScore": 0-100 overall fairness score (100 = perfectly fair)
+5. "tldr": A 3-4 sentence TL;DR summary in simple, plain language. Mention key coverage amounts, premiums if visible, and the #1 risk.
+6. "clauses": An array of extracted clauses, each with:
+   - "name": Short clause name (e.g., "Waiting Period", "Co-Pay Clause", "NCB Transfer")
+   - "simplified": Plain language explanation of what it means for the policyholder
+   - "level": "green" (good for customer), "yellow" (caution), or "red" (bad/gotcha)
+   - "category": Category like "Coverage", "Exclusion", "Waiting Period", "Limit", "Deductible", "Claim Process", "Premium", "Renewal", "Add-On", "General"
+   - "impactScore": 1-10 (10 = highest financial impact on customer)
+   - "financialImpact": Estimated ₹ impact string (e.g., "Could cost ₹50,000+ out of pocket")
+7. "redFlags": Array of top 3-5 RED FLAGS (gotchas that could hurt the customer)
+8. "greenFlags": Array of top 3-5 GREEN FLAGS (genuinely beneficial clauses)
+9. "recommendations": Array of 2-3 actionable recommendations for the policyholder
+10. "missingCoverages": Array of important coverages NOT found in this policy
+
+IMPORTANT: Extract REAL clauses from the actual text. Do NOT make up clauses. Be specific with ₹ amounts mentioned in the document. Reference IRDAI guidelines where relevant.
+
+Respond ONLY with valid JSON. No markdown, no backticks, no explanation outside JSON.`
+                        },
+                        {
+                            role: 'user',
+                            content: `Analyze this REAL insurance policy document (${originalname}, ${(size / 1024).toFixed(1)}KB, detected type: ${detectedType}):\n\n${textForAI}`
+                        }
+                    ],
+                    temperature: 0.2,
+                    max_tokens: 3000
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://insurix.india',
+                        'X-Title': 'Insurix Policy Decoder File Upload'
+                    },
+                    timeout: 30000
+                }
+            );
+
+            const raw = aiRes.data?.choices?.[0]?.message?.content || '';
+            // Extract JSON from response
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                aiResult = JSON.parse(jsonMatch[0]);
+            }
+        } catch (aiErr) {
+            console.error('[PolicyDecoder Upload] AI analysis failed:', aiErr.message);
+        }
+
+        // ===== BUILD RESPONSE =====
+        // Use AI-extracted clauses or fall back to basic text analysis
+        let clauses = [];
+        let fairnessScore = 65; // default
+        let tldr = '';
+
+        if (aiResult && aiResult.clauses && aiResult.clauses.length > 0) {
+            clauses = aiResult.clauses.map(c => ({
+                name: c.name || 'Clause',
+                simplified: c.simplified || c.description || '',
+                level: ['green', 'yellow', 'red'].includes(c.level) ? c.level : 'yellow',
+                category: c.category || 'General',
+                impactScore: Math.min(10, Math.max(1, Number(c.impactScore) || 5)),
+                financialImpact: c.financialImpact || null,
+                flag: c.level === 'green' ? '🟢' : c.level === 'yellow' ? '🟡' : '🔴'
+            })).sort((a, b) => b.impactScore - a.impactScore);
+
+            fairnessScore = aiResult.fairnessScore || fairnessScore;
+            tldr = aiResult.tldr || `Policy document "${originalname}" analyzed. ${clauses.length} clauses extracted.`;
+        } else {
+            // Basic fallback analysis without AI
+            tldr = `Extracted ${extractedText.length} characters from "${originalname}". AI analysis unavailable — showing basic text summary.`;
+            // Create a single clause from the extracted text
+            clauses = [{
+                name: 'Full Document Text',
+                simplified: extractedText.substring(0, 500) + (extractedText.length > 500 ? '...' : ''),
+                level: 'yellow',
+                category: 'General',
+                impactScore: 5,
+                financialImpact: null,
+                flag: '🟡'
+            }];
+        }
+
+        // Clause counts
+        const greenCount = clauses.filter(c => c.level === 'green').length;
+        const yellowCount = clauses.filter(c => c.level === 'yellow').length;
+        const redCount = clauses.filter(c => c.level === 'red').length;
+
+        fairnessScore = Math.min(100, Math.max(0, fairnessScore));
+
+        res.json({
+            success: true,
+            uploadMode: true,
+            fileName: originalname,
+            fileSize: size,
+            extractedTextLength: extractedText.length,
+            detectedType,
+            detectedInsurer,
+            policyType: aiResult?.policyType || detectedType,
+            policyName: aiResult?.policyName || `Uploaded Policy — ${originalname}`,
+            fairnessScore,
+            fairnessVerdict: fairnessScore >= 75 ? '🟢 Fair Policy' : fairnessScore >= 50 ? '🟡 Proceed with Caution' : '🔴 Multiple Red Flags',
+            tldr,
+            clauses,
+            clauseSummary: { total: clauses.length, green: greenCount, yellow: yellowCount, red: redCount },
+            insurerDetails: null,
+            insurerName: detectedInsurer || null,
+            aiAnalysis: aiResult ? {
+                tldr: aiResult.tldr,
+                redFlags: aiResult.redFlags || [],
+                greenFlags: aiResult.greenFlags || [],
+                recommendations: aiResult.recommendations || [],
+                missingCoverages: aiResult.missingCoverages || []
+            } : null,
+            methodology: 'Real Document Extraction (pdf-parse/mammoth) + Gemini 2.0 Flash AI Analysis',
+            extractedPreview: extractedText.substring(0, 300) + '...'
+        });
+
+    } catch (err) {
+        console.error('[PolicyDecoder Upload] Error:', err.message);
+        // Handle multer errors
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(413).json({ success: false, error: 'File too large. Maximum 10MB allowed.' });
+        }
+        res.status(500).json({ success: false, error: err.message || 'Failed to process uploaded file' });
+    }
+});
+
+// POST /api/policy-decoder
+app.post('/api/policy-decoder', async (req, res) => {
+    const { policyType, insurerId, userPolicyText } = req.body;
+    const pType = policyType || 'motor_comprehensive';
+    const policyData = POLICY_CLAUSE_DATABASE[pType];
+
+    if (!policyData) {
+        return res.status(400).json({ success: false, error: 'Unknown policy type. Use: motor_comprehensive, health_individual, term_life' });
+    }
+
+    // Get insurer-specific data
+    const insurerClauses = insurerId ? policyData.insurerSpecific[insurerId] : null;
+
+    // Calculate Fairness Score using impact-weighted methodology
+    const clauses = policyData.standardClauses;
+    const totalClauses = clauses.length;
+    const greenCount = clauses.filter(c => c.level === 'green').length;
+    const yellowCount = clauses.filter(c => c.level === 'yellow').length;
+    const redCount = clauses.filter(c => c.level === 'red').length;
+    // Impact-weighted: subtract red clause impact scores, add green, neutral for yellow
+    const maxPossible = totalClauses * 10;
+    const actualScore = clauses.reduce((sum, c) => {
+        if (c.level === 'green') return sum + (10 - c.impactScore); // low impact = good
+        if (c.level === 'red') return sum - c.impactScore;          // high impact = bad
+        return sum + (5 - c.impactScore * 0.5);                     // yellow = moderate
+    }, maxPossible * 0.5);
+    let fairnessScore = Math.round((actualScore / maxPossible) * 100);
+
+    // Insurer-specific adjustments
+    if (insurerClauses) {
+        if (pType === 'health_individual') {
+            if (insurerClauses.coPay && insurerClauses.coPay !== 'None' && insurerClauses.coPay !== 'None (most plans)' && insurerClauses.coPay !== 'None (premium plans)') fairnessScore -= 8;
+            if (insurerClauses.restorationBenefit === 'Yes' || insurerClauses.restorationBenefit?.startsWith('Yes')) fairnessScore += 5;
+            if (insurerClauses.roomRentCap && insurerClauses.roomRentCap.includes('No cap')) fairnessScore += 5;
+            if (insurerClauses.waitingPeriodPED === '2 years') fairnessScore += 5;
+            else if (insurerClauses.waitingPeriodPED === '4 years') fairnessScore -= 5;
+        } else if (pType === 'term_life') {
+            const csr = parseFloat(insurerClauses.claimSettlementRatio);
+            if (csr >= 99) fairnessScore += 8;
+            else if (csr >= 98) fairnessScore += 4;
+            else if (csr < 96) fairnessScore -= 6;
+            if (insurerClauses.onlineDiscount && parseInt(insurerClauses.onlineDiscount) >= 8) fairnessScore += 3;
+        } else {
+            if (insurerClauses.roadside === 'included') fairnessScore += 3;
+            if (insurerClauses.engineProtect === 'not available') fairnessScore -= 5;
+            if (insurerClauses.returnToInvoice === 'not available') fairnessScore -= 3;
+        }
+    }
+    fairnessScore = Math.min(100, Math.max(0, fairnessScore));
+
+    // Use AI to generate a TL;DR if user provided custom text
+    let aiTldr = null;
+    if (userPolicyText && userPolicyText.length > 50) {
+        try {
+            const aiRes = await axios.post(
+                'https://openrouter.ai/api/v1/chat/completions',
+                {
+                    model: 'google/gemini-2.0-flash-001',
+                    messages: [
+                        {
+                            role: 'system',
+                            content: `You are an Indian insurance policy decoder for Insurix.India. Analyze the given policy text and extract:
+1. A 2-3 sentence TL;DR summary in simple language
+2. Top 3 RED FLAGS (gotchas that could cost the policyholder money)
+3. Top 3 GREEN FLAGS (genuinely good clauses)
+4. An overall Fairness Score suggestion (0-100)
+Respond in valid JSON format: { "tldr": "...", "redFlags": ["..."], "greenFlags": ["..."], "suggestedScore": 72 }
+Use ₹ for amounts. Reference IRDAI guidelines where relevant. Be specific about financial impact.`
+                        },
+                        { role: 'user', content: `Analyze this policy text:\n${userPolicyText.substring(0, 3000)}` }
+                    ],
+                    temperature: 0.3,
+                    max_tokens: 600
+                },
+                {
+                    headers: {
+                        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': 'https://insurix.india',
+                        'X-Title': 'Insurix Policy Decoder'
+                    },
+                    timeout: 15000
+                }
+            );
+            const raw = aiRes.data?.choices?.[0]?.message?.content || '';
+            // Try to parse JSON from AI response
+            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                aiTldr = JSON.parse(jsonMatch[0]);
+            }
+        } catch (e) {
+            console.error('[PolicyDecoder] AI analysis failed:', e.message);
+        }
+    }
+
+    // Build the response
+    const tldrMap = {
+        'motor_comprehensive': `This motor comprehensive policy covers you for third-party liability (unlimited for injury/death), own damage from accidents/theft/calamities, and ₹15L personal accident. However, depreciation on parts is NOT covered unless you add Zero-Dep (20-50% out-of-pocket risk), and mechanical breakdowns need separate Engine Protect cover.`,
+        'health_individual': `This health policy covers hospitalization expenses, day-care procedures, and pre/post hospitalization costs. BUT — pre-existing diseases have a 2-4 year waiting period (zero cover), room rent caps can inflate your bill by 30-40%, and disease-specific sub-limits may cover only 25-50% of actual surgery costs.`,
+        'term_life': `This term plan pays your nominee ₹50L-2Cr if you die during the policy term — pure risk cover at the lowest cost. BUT — non-disclosure of medical conditions (hidden diabetes, smoking) results in 100% claim rejection. Premium is never refunded if you survive. Non-smoker declaration is verified at claim time.`
+    };
+    const tldrSummary = tldrMap[pType] || 'Policy analysis complete.';
+
+    res.json({
+        success: true,
+        policyType: pType,
+        policyName: policyData.name,
+        fairnessScore,
+        fairnessVerdict: fairnessScore >= 75 ? '🟢 Fair Policy' : fairnessScore >= 50 ? '🟡 Proceed with Caution' : '🔴 Multiple Red Flags',
+        tldr: aiTldr?.tldr || tldrSummary,
+        clauses: clauses.map(c => ({
+            name: c.name,
+            simplified: c.simplified,
+            level: c.level,
+            category: c.category,
+            impactScore: c.impactScore,
+            financialImpact: c.financialImpact || null,
+            flag: c.level === 'green' ? '🟢' : c.level === 'yellow' ? '🟡' : '🔴'
+        })).sort((a, b) => b.impactScore - a.impactScore),
+        clauseSummary: { total: totalClauses, green: greenCount, yellow: yellowCount, red: redCount },
+        insurerDetails: insurerClauses || null,
+        insurerName: insurerClauses ? (IRDAI_INSURER_DATA[insurerId]?.name || insurerId) : null,
+        aiAnalysis: aiTldr || null,
+        methodology: 'IRDAI Standard Policy Wordings + Chain-of-Density Impact Scoring'
+    });
+});
+
+// ===== 3.2 COMMISSION TRANSPARENCY — "Commission Leakage Tracker" =====
+
+// IRDAI Expenses of Management (EoM) caps — Commission structures by product & channel
+const IRDAI_COMMISSION_DATA = {
+    motor: {
+        category: 'Motor Insurance',
+        irdaiEoMCap: 0.35, // 35% of premium is max EoM for motor
+        channels: {
+            agent: { commissionPercent: 15, overridingCommission: 2, operatingExpense: 8, totalCost: 25, label: 'Traditional Agent' },
+            broker: { commissionPercent: 12.5, overridingCommission: 1.5, operatingExpense: 6, totalCost: 20, label: 'Insurance Broker' },
+            online_aggregator: { commissionPercent: 10, overridingCommission: 0, operatingExpense: 5, totalCost: 15, label: 'Online Aggregator (PolicyBazaar etc.)' },
+            direct_digital: { commissionPercent: 0, overridingCommission: 0, operatingExpense: 3, totalCost: 3, label: 'Direct Digital (Insurer Website/App)' },
+            bancassurance: { commissionPercent: 8, overridingCommission: 1, operatingExpense: 4, totalCost: 13, label: 'Bank Channel' }
+        },
+        perInsurerCommission: {
+            hdfc: { agentComm: 14, directDiscount: 8, webExclusive: true },
+            icici: { agentComm: 15, directDiscount: 10, webExclusive: true },
+            bajaj: { agentComm: 15, directDiscount: 7, webExclusive: false },
+            tata: { agentComm: 13, directDiscount: 5, webExclusive: true },
+            sbi: { agentComm: 12, directDiscount: 3, webExclusive: false },
+            max: { agentComm: 14, directDiscount: 6, webExclusive: true }
+        }
+    },
+    health: {
+        category: 'Health Insurance',
+        irdaiEoMCap: 0.35,
+        channels: {
+            agent: { commissionPercent: 15, overridingCommission: 3, operatingExpense: 7, totalCost: 25, label: 'Traditional Agent' },
+            broker: { commissionPercent: 12.5, overridingCommission: 2, operatingExpense: 5, totalCost: 19.5, label: 'Insurance Broker' },
+            online_aggregator: { commissionPercent: 12, overridingCommission: 0, operatingExpense: 5, totalCost: 17, label: 'Online Aggregator' },
+            direct_digital: { commissionPercent: 0, overridingCommission: 0, operatingExpense: 4, totalCost: 4, label: 'Direct Digital' },
+            bancassurance: { commissionPercent: 10, overridingCommission: 2, operatingExpense: 5, totalCost: 17, label: 'Bank Channel' }
+        },
+        perInsurerCommission: {
+            hdfc: { agentComm: 15, directDiscount: 5, webExclusive: true },
+            icici: { agentComm: 15, directDiscount: 7, webExclusive: true },
+            bajaj: { agentComm: 14, directDiscount: 8, webExclusive: false },
+            tata: { agentComm: 12, directDiscount: 4, webExclusive: true },
+            sbi: { agentComm: 10, directDiscount: 2, webExclusive: false },
+            max: { agentComm: 13, directDiscount: 5, webExclusive: true }
+        }
+    },
+    life_term: {
+        category: 'Term Life Insurance',
+        irdaiEoMCap: 0.40,
+        channels: {
+            agent: { commissionPercent: 35, overridingCommission: 5, operatingExpense: 10, totalCost: 50, label: 'Traditional Agent' },
+            broker: { commissionPercent: 25, overridingCommission: 3, operatingExpense: 8, totalCost: 36, label: 'Insurance Broker' },
+            online_aggregator: { commissionPercent: 15, overridingCommission: 0, operatingExpense: 5, totalCost: 20, label: 'Online Aggregator' },
+            direct_digital: { commissionPercent: 0, overridingCommission: 0, operatingExpense: 5, totalCost: 5, label: 'Direct Digital' },
+            bancassurance: { commissionPercent: 20, overridingCommission: 3, operatingExpense: 6, totalCost: 29, label: 'Bank Channel' }
+        },
+        perInsurerCommission: {
+            hdfc: { agentComm: 30, directDiscount: 20, webExclusive: true },
+            icici: { agentComm: 35, directDiscount: 25, webExclusive: true },
+            bajaj: { agentComm: 28, directDiscount: 15, webExclusive: false },
+            tata: { agentComm: 25, directDiscount: 18, webExclusive: true },
+            sbi: { agentComm: 20, directDiscount: 10, webExclusive: false },
+            max: { agentComm: 33, directDiscount: 22, webExclusive: true }
+        }
+    }
+};
+
+// GET /api/commission-transparency/:productType
+app.get('/api/commission-transparency/:productType', (req, res) => {
+    const productType = req.params.productType;
+    const premium = parseInt(req.query.premium) || 10000;
+    const insurerId = req.query.insurer || null;
+
+    const commData = IRDAI_COMMISSION_DATA[productType];
+    if (!commData) {
+        return res.status(400).json({ success: false, error: 'Unknown product type. Use: motor, health, life_term' });
+    }
+
+    // Calculate actual amounts per channel
+    const channelBreakdown = Object.entries(commData.channels).map(([key, ch]) => {
+        const commissionAmt = Math.round(premium * ch.commissionPercent / 100);
+        const overridingAmt = Math.round(premium * ch.overridingCommission / 100);
+        const operatingAmt = Math.round(premium * ch.operatingExpense / 100);
+        const totalDistCost = Math.round(premium * ch.totalCost / 100);
+        const coverageAmt = premium - totalDistCost;
+        return {
+            channel: key,
+            channelLabel: ch.label,
+            commissionPercent: ch.commissionPercent,
+            overridingPercent: ch.overridingCommission,
+            operatingPercent: ch.operatingExpense,
+            totalDistributionPercent: ch.totalCost,
+            coveragePercent: 100 - ch.totalCost,
+            amounts: {
+                commission: commissionAmt,
+                overriding: overridingAmt,
+                operating: operatingAmt,
+                totalDistribution: totalDistCost,
+                goesToCoverage: coverageAmt
+            }
+        };
+    });
+
+    // Potential savings: agent vs direct digital
+    const agentCh = commData.channels.agent;
+    const directCh = commData.channels.direct_digital;
+    const potentialSavings = Math.round(premium * (agentCh.totalCost - directCh.totalCost) / 100);
+
+    // Per-insurer breakdown
+    let insurerBreakdown = null;
+    if (insurerId && commData.perInsurerCommission[insurerId]) {
+        const ins = commData.perInsurerCommission[insurerId];
+        const insName = IRDAI_INSURER_DATA[insurerId]?.name || insurerId;
+        insurerBreakdown = {
+            insurerId,
+            insurerName: insName,
+            agentCommission: ins.agentComm,
+            agentCommissionAmount: Math.round(premium * ins.agentComm / 100),
+            directDiscountPercent: ins.directDiscount,
+            directSavingsAmount: Math.round(premium * ins.directDiscount / 100),
+            webExclusivePlans: ins.webExclusive,
+            recommendation: ins.webExclusive
+                ? `💡 ${insName} offers web-exclusive plans with ${ins.directDiscount}% lower premium — save ₹${Math.round(premium * ins.directDiscount / 100).toLocaleString('en-IN')}`
+                : `ℹ️ ${insName} offers ${ins.directDiscount}% direct discount but no web-exclusive plans`
+        };
+    }
+
+    // All insurers comparison
+    const allInsurerComparison = Object.entries(commData.perInsurerCommission).map(([id, ins]) => ({
+        insurerId: id,
+        insurerName: IRDAI_INSURER_DATA[id]?.name || id,
+        agentCommissionPercent: ins.agentComm,
+        agentCommissionAmount: Math.round(premium * ins.agentComm / 100),
+        directSavingsPercent: ins.directDiscount,
+        directSavingsAmount: Math.round(premium * ins.directDiscount / 100),
+        webExclusive: ins.webExclusive
+    })).sort((a, b) => b.directSavingsPercent - a.directSavingsPercent);
+
+    res.json({
+        success: true,
+        productType,
+        category: commData.category,
+        premium,
+        irdaiEoMCap: `${commData.irdaiEoMCap * 100}%`,
+        channelBreakdown,
+        potentialSavings: {
+            amount: potentialSavings,
+            percent: agentCh.totalCost - directCh.totalCost,
+            description: `Switching from agent (${agentCh.totalCost}% distribution cost) to direct digital (${directCh.totalCost}%) saves ₹${potentialSavings.toLocaleString('en-IN')}`
+        },
+        insurerDetails: insurerBreakdown,
+        allInsurers: allInsurerComparison,
+        pieChart: {
+            agentChannel: { coverage: 100 - agentCh.totalCost, distribution: agentCh.totalCost },
+            directChannel: { coverage: 100 - directCh.totalCost, distribution: directCh.totalCost }
+        },
+        dataSource: 'IRDAI Expenses of Management Regulations 2024, Public EoM Disclosures'
+    });
+});
+
+// ===== 3.3 RENEWAL ORACLE — Forecast & Alerts =====
+
+// POST /api/renewal-forecast
+app.post('/api/renewal-forecast', (req, res) => {
+    const { registrationNumber, make, model, year, cc, vehicleType, currentPremium, currentInsurer, policyExpiryDate, userAge } = req.body;
+
+    // Get vehicle data
+    let vehicleData = null;
+    if (registrationNumber) {
+        const lookup = lookupVehicle(registrationNumber);
+        if (lookup.success) vehicleData = lookup.data;
+    }
+    if (!vehicleData && make && model) {
+        const vInfo = VEHICLE_DATABASE[make]?.[model] || CAR_DATABASE[make]?.[model];
+        if (vInfo) {
+            const vAge = new Date().getFullYear() - (parseInt(year) || 2023);
+            let dep = vAge <= 0 ? 0 : vAge <= 1 ? 15 : vAge <= 2 ? 20 : vAge <= 3 ? 30 : vAge <= 4 ? 40 : 50;
+            vehicleData = {
+                make, model, year: parseInt(year) || 2023, cc: vInfo.cc,
+                type: vInfo.type, exShowroomPrice: vInfo.price, segment: vInfo.segment,
+                idv: Math.round(vInfo.price * (1 - dep / 100)), vehicleAge: vAge,
+                premium: { thirdParty: 0, ownDamage: 0 },
+                registrationNumber: registrationNumber || 'MANUAL'
+            };
+        }
+    }
+    if (!vehicleData) {
+        return res.status(400).json({ success: false, error: 'Provide registrationNumber or make+model+year' });
+    }
+
+    const currentYear = new Date().getFullYear();
+    const vYear = vehicleData.year;
+    const vAge = currentYear - vYear;
+    const exShowroom = vehicleData.exShowroomPrice;
+    const engineCC = vehicleData.cc || parseInt(cc) || 150;
+    const vType = vehicleData.type || vehicleType || '2W';
+    const age = parseInt(userAge) || 30;
+
+    // Current policy figures
+    const curPremium = parseInt(currentPremium) || vehicleData.premium?.comprehensive || vehicleData.premium?.thirdParty + vehicleData.premium?.ownDamage || 2000;
+
+    // ----- MOTOR RENEWAL FORECAST (3-year projection) -----
+    const forecast = [];
+    for (let y = 1; y <= 3; y++) {
+        const futureAge = vAge + y;
+        // IDV depreciation
+        let depPercent;
+        if (futureAge <= 0) depPercent = 0;
+        else if (futureAge <= 1) depPercent = 15;
+        else if (futureAge <= 2) depPercent = 20;
+        else if (futureAge <= 3) depPercent = 30;
+        else if (futureAge <= 4) depPercent = 40;
+        else depPercent = 50;
+        const futureIDV = Math.round(exShowroom * (1 - depPercent / 100));
+
+        // TP rate increase (IRDAI historically raises 5-10%/year)
+        const tpTrend = TP_RATE_TREND[vType] || 0.07;
+        let baseTP;
+        if (vType === '4W') {
+            baseTP = engineCC <= 1000 ? 2094 : engineCC <= 1500 ? 3416 : 7897;
+        } else {
+            baseTP = engineCC === 0 ? 714 : engineCC <= 75 ? 538 : engineCC <= 150 ? 714 : engineCC <= 350 ? 1366 : 2804;
+        }
+        const futureTP = Math.round(baseTP * Math.pow(1 + tpTrend, y));
+
+        // OD rate (may change slightly)
+        const odRate = vType === '4W' ? (engineCC > 1500 ? 0.032 : 0.026) : (engineCC > 350 ? 0.035 : engineCC > 150 ? 0.028 : 0.022);
+        const futureOD = Math.round(futureIDV * odRate);
+
+        const futurePremium = futureTP + futureOD;
+        const futureGST = Math.round(futurePremium * 0.18);
+        const futureTotal = futurePremium + futureGST;
+
+        // Change from current
+        const premiumChange = futureTotal - curPremium;
+        const premiumChangePercent = Math.round((premiumChange / curPremium) * 100);
+
+        // IDV benefit from depreciation
+        const idvDrop = vehicleData.idv - futureIDV;
+        const idvDropPercent = Math.round((idvDrop / vehicleData.idv) * 100);
+
+        forecast.push({
+            year: currentYear + y,
+            vehicleAge: futureAge,
+            idv: futureIDV,
+            idvDropFromCurrent: idvDrop,
+            idvDropPercent,
+            tpPremium: futureTP,
+            tpChangePercent: Math.round(((futureTP - baseTP) / baseTP) * 100),
+            odPremium: futureOD,
+            gst: futureGST,
+            totalPremium: futureTotal,
+            premiumChange,
+            premiumChangePercent,
+            direction: premiumChange > 0 ? 'UP' : premiumChange < 0 ? 'DOWN' : 'STABLE',
+            arrow: premiumChange > 0 ? '↑' : premiumChange < 0 ? '↓' : '→'
+        });
+    }
+
+    // ----- SWITCH ALERTS -----
+    // Compare current insurer with best available
+    const switchAlerts = [];
+    const quotes = generateQuotes(vehicleData);
+    const sortedQuotes = quotes.sort((a, b) => a.premium.comprehensive.total - b.premium.comprehensive.total);
+    const bestQuote = sortedQuotes[0];
+    const curInsurerQuote = currentInsurer ? quotes.find(q => q.insurerId === currentInsurer) : null;
+    const currentTotal = curInsurerQuote ? curInsurerQuote.premium.comprehensive.total : curPremium;
+
+    if (bestQuote && bestQuote.premium.comprehensive.total < currentTotal * 0.92) {
+        const savingsAmt = currentTotal - bestQuote.premium.comprehensive.total;
+        switchAlerts.push({
+            type: 'SWITCH_RECOMMENDED',
+            severity: 'high',
+            title: `Switch to ${bestQuote.insurerName} — Save ₹${savingsAmt.toLocaleString('en-IN')}`,
+            detail: `Your current insurer charges ₹${currentTotal.toLocaleString('en-IN')}. ${bestQuote.insurerName} offers ₹${bestQuote.premium.comprehensive.total.toLocaleString('en-IN')} — that's ${Math.round((savingsAmt / currentTotal) * 100)}% less.`,
+            action: 'Switch before renewal date to lock in lower premium',
+            savingsAmount: savingsAmt,
+            savingsPercent: Math.round((savingsAmt / currentTotal) * 100)
+        });
+    }
+
+    // Renewal timing alert
+    const expiryDate = policyExpiryDate ? new Date(policyExpiryDate) : new Date(Date.now() + 45 * 86400000);
+    const daysToExpiry = Math.round((expiryDate - new Date()) / 86400000);
+    if (daysToExpiry <= 60 && daysToExpiry > 0) {
+        switchAlerts.push({
+            type: 'RENEWAL_DUE_SOON',
+            severity: daysToExpiry <= 15 ? 'critical' : daysToExpiry <= 30 ? 'high' : 'medium',
+            title: `Policy expires in ${daysToExpiry} days`,
+            detail: daysToExpiry <= 15
+                ? `⚠️ URGENT: Your policy expires on ${expiryDate.toLocaleDateString('en-IN')}. Renew NOW to avoid NCB loss and legal risk of driving uninsured.`
+                : `Your policy expires on ${expiryDate.toLocaleDateString('en-IN')}. Start comparing quotes now for best rates.`,
+            action: daysToExpiry <= 15 ? 'Renew immediately' : 'Compare and renew within 30 days',
+            daysRemaining: daysToExpiry
+        });
+    } else if (daysToExpiry <= 0) {
+        switchAlerts.push({
+            type: 'POLICY_EXPIRED',
+            severity: 'critical',
+            title: '🚨 Policy has EXPIRED',
+            detail: 'Your vehicle is uninsured. Driving without insurance is a criminal offense under MV Act. NCB may be lost. Get insured NOW.',
+            action: 'Purchase new policy immediately — inspection may be required'
+        });
+    }
+
+    // TP rate hike alert
+    const nextYearTP = forecast[0]?.tpPremium;
+    const currentTP = vehicleData.premium?.thirdParty;
+    if (currentTP && nextYearTP > currentTP * 1.05) {
+        switchAlerts.push({
+            type: 'TP_RATE_HIKE',
+            severity: 'medium',
+            title: `TP premium projected to rise ${Math.round(((nextYearTP - currentTP) / currentTP) * 100)}% next year`,
+            detail: `IRDAI is expected to raise third-party rates from ₹${currentTP.toLocaleString('en-IN')} to ₹${nextYearTP.toLocaleString('en-IN')} for FY ${currentYear + 1}-${(currentYear + 2) % 100}.`,
+            action: 'Lock in current rates by renewing before IRDAI rate revision (usually April 1st)'
+        });
+    }
+
+    // IDV drop warning
+    if (forecast[0]?.idvDropPercent > 10) {
+        switchAlerts.push({
+            type: 'IDV_DEPRECIATION',
+            severity: 'low',
+            title: `Vehicle IDV dropping ${forecast[0].idvDropPercent}% next year`,
+            detail: `Your vehicle's insured value will drop from ₹${vehicleData.idv.toLocaleString('en-IN')} to ₹${forecast[0].idv.toLocaleString('en-IN')}. Lower IDV = lower claim payout.`,
+            action: 'Consider Return-to-Invoice add-on for full value protection'
+        });
+    }
+
+    // Health-specific age-band alert (if user age provided)
+    const ageBandJumps = [30, 35, 40, 45, 50, 55, 60, 65];
+    const nextAgeBand = ageBandJumps.find(a => a > age && a <= age + 3);
+    if (nextAgeBand) {
+        switchAlerts.push({
+            type: 'AGE_BAND_JUMP',
+            severity: 'medium',
+            title: `Health premium hike at age ${nextAgeBand}`,
+            detail: `You'll hit the ${nextAgeBand}-year age band in ${nextAgeBand - age} year(s). Health insurance premiums typically jump 15-25% at this threshold.`,
+            action: `Lock in current age-band rates by purchasing/renewing health policy before turning ${nextAgeBand}`
+        });
+    }
+
+    // Best insurer recommendations
+    const topInsurers = sortedQuotes.slice(0, 3).map(q => ({
+        insurerId: q.insurerId,
+        insurerName: q.insurerName,
+        premium: q.premium.comprehensive.total,
+        savings: currentTotal - q.premium.comprehensive.total,
+        savingsPercent: Math.round((1 - q.premium.comprehensive.total / currentTotal) * 100),
+        highlights: q.features
+    }));
+
+    res.json({
+        success: true,
+        vehicle: {
+            make: vehicleData.make,
+            model: vehicleData.model,
+            year: vYear,
+            cc: engineCC,
+            type: vType,
+            currentIDV: vehicleData.idv,
+            registrationNumber: vehicleData.registrationNumber || registrationNumber
+        },
+        currentPremium: curPremium,
+        forecast,
+        alerts: switchAlerts,
+        alertCount: { critical: switchAlerts.filter(a => a.severity === 'critical').length, high: switchAlerts.filter(a => a.severity === 'high').length, medium: switchAlerts.filter(a => a.severity === 'medium').length, low: switchAlerts.filter(a => a.severity === 'low').length },
+        topInsurers,
+        methodology: 'IRDAI TP Trend Analysis + IDV Depreciation Curve + Age-Band Actuarial Tables + Competitive Quote Engine'
+    });
+});
+
+// ============================================================================
+// BOOK HOME VISIT — Health Insurance Consultation Booking
+// ============================================================================
+const homeVisitBookings = [];
+
+const advisorNames = [
+    'Priya Sharma', 'Rajesh Kumar', 'Sneha Reddy', 'Amit Patel', 'Kavitha Nair',
+    'Suresh Babu', 'Anita Deshmukh', 'Vikram Singh', 'Meera Iyer', 'Rohit Joshi'
+];
+
+app.post('/api/book-home-visit', (req, res) => {
+    try {
+        const { fullName, age, phone, email, members, existingInsurance,
+            address, city, state, pincode, landmark,
+            date, timeSlot, concerns, language } = req.body;
+
+        // Validation
+        if (!fullName || !phone || !date || !timeSlot || !address || !city || !pincode) {
+            return res.status(400).json({ success: false, error: 'Missing required fields' });
+        }
+
+        if (!/^[6-9]\d{9}$/.test(phone)) {
+            return res.status(400).json({ success: false, error: 'Invalid mobile number' });
+        }
+
+        if (!/^\d{6}$/.test(pincode)) {
+            return res.status(400).json({ success: false, error: 'Invalid pincode' });
+        }
+
+        const bookingId = 'BHV-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substring(2, 6).toUpperCase();
+        const advisor = advisorNames[Math.floor(Math.random() * advisorNames.length)];
+
+        const booking = {
+            bookingId,
+            fullName,
+            name: fullName,
+            age: parseInt(age) || null,
+            phone,
+            email: email || null,
+            members,
+            existingInsurance,
+            address,
+            city,
+            state,
+            pincode,
+            landmark: landmark || null,
+            date,
+            timeSlot,
+            concerns: concerns || null,
+            language: language || 'english',
+            advisor,
+            status: 'confirmed',
+            createdAt: new Date().toISOString()
+        };
+
+        homeVisitBookings.push(booking);
+
+        console.log(`\n🏠 Home Visit Booked: ${bookingId}`);
+        console.log(`   Name: ${fullName} | Phone: ${phone}`);
+        console.log(`   City: ${city} | Date: ${date} | Slot: ${timeSlot}`);
+        console.log(`   Advisor: ${advisor}`);
+
+        res.json({
+            success: true,
+            booking: {
+                bookingId,
+                name: fullName,
+                date,
+                timeSlot,
+                city,
+                advisor,
+                status: 'confirmed',
+                message: `Your home visit has been confirmed. ${advisor} will call you within 30 minutes.`
+            }
+        });
+    } catch (err) {
+        console.error('Book Home Visit Error:', err);
+        res.status(500).json({ success: false, error: 'Failed to book home visit' });
+    }
+});
+
 // Start server
 app.listen(PORT, () => {
     console.log(`\n🚀 Insurix.India Server running at http://localhost:${PORT}`);
@@ -1745,5 +3366,9 @@ app.listen(PORT, () => {
     console.log(`   GET  /api/speech-token          - Speech SDK token`);
     console.log(`   POST /api/predict-claim         - 🛡️  Loot-Shield: Claim Friction Score`);
     console.log(`   POST /api/vulnerability-assessment - 🔍 Gap Analysis: Vulnerability Score`);
-    console.log(`   POST /api/tco-simulator         - 📊 TCO: 5-Year Cost Simulator\n`);
+    console.log(`   POST /api/tco-simulator         - 📊 TCO: 5-Year Cost Simulator`);
+    console.log(`   POST /api/policy-decoder        - 📜 Policy Decoder: Clause Simplifier`);
+    console.log(`   POST /api/policy-decoder/upload  - 📄 Policy Decoder: PDF/DOCX/TXT File Upload`);
+    console.log(`   GET  /api/commission-transparency/:type - 💰 Commission Leakage Tracker`);
+    console.log(`   POST /api/renewal-forecast      - 🔮 Renewal Oracle: Forecast & Alerts\n`);
 });

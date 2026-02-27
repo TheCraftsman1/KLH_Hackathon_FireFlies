@@ -291,3 +291,132 @@ async function acceptOffer(insurerId) {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// ===== AI CLASSIFIED POLICIES FUNCTIONALITY =====
+
+// Policy category tab handling
+document.querySelectorAll('.neg-policy-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        // Update active tab
+        document.querySelectorAll('.neg-policy-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        
+        // Get category
+        const category = tab.dataset.category;
+        loadPolicies(category);
+    });
+});
+
+// Load policies from API
+async function loadPolicies(category) {
+    const aiAnalysisText = document.getElementById('aiAnalysisText');
+    const bestValueContainer = document.getElementById('bestValuePolicies');
+    const bestCoverageContainer = document.getElementById('bestCoveragePolicies');
+    const bestClaimsContainer = document.getElementById('bestClaimsPolicies');
+    const topRatedContainer = document.getElementById('topRatedPolicies');
+    const policyListInner = document.getElementById('policyListInner');
+    
+    // Show loading state
+    const loadingHTML = '<div class="neg-policies-loading"><i class="fas fa-circle-notch fa-spin"></i><p>Loading policies...</p></div>';
+    bestValueContainer.innerHTML = loadingHTML;
+    bestCoverageContainer.innerHTML = loadingHTML;
+    bestClaimsContainer.innerHTML = loadingHTML;
+    topRatedContainer.innerHTML = loadingHTML;
+    policyListInner.innerHTML = loadingHTML;
+    
+    aiAnalysisText.textContent = 'Analyzing policies with AI...';
+    
+    try {
+        // Call the classify API
+        const response = await fetch(API_BASE + '/api/policies/classify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                vehicleType: category === 'all' ? undefined : category
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!data.success) {
+            throw new Error(data.error || 'Failed to load policies');
+        }
+        
+        // Update AI analysis
+        if (data.classification.aiAnalysis) {
+            aiAnalysisText.textContent = data.classification.aiAnalysis;
+        } else {
+            aiAnalysisText.textContent = 'Based on our analysis of ' + data.policies.length + ' policies from top Indian insurers.';
+        }
+        
+        // Render classified policies
+        renderClassificationCard(bestValueContainer, data.classification.classified.bestValue, 'Best Value');
+        renderClassificationCard(bestCoverageContainer, data.classification.classified.bestCoverage, 'Best Coverage');
+        renderClassificationCard(bestClaimsContainer, data.classification.classified.bestClaims, 'Best Claims');
+        renderClassificationCard(topRatedContainer, data.classification.classified.topRated, 'Top Rated');
+        
+        // Render all policies
+        renderPolicyList(policyListInner, data.policies);
+        
+    } catch (err) {
+        console.error('Error loading policies:', err);
+        const errorHTML = '<p class="neg-class-empty">Error loading policies. Make sure the server is running.</p>';
+        bestValueContainer.innerHTML = errorHTML;
+        bestCoverageContainer.innerHTML = errorHTML;
+        bestClaimsContainer.innerHTML = errorHTML;
+        topRatedContainer.innerHTML = errorHTML;
+        policyListInner.innerHTML = errorHTML;
+        aiAnalysisText.textContent = 'Error loading policies: ' + err.message;
+    }
+}
+
+function renderClassificationCard(container, policies, title) {
+    if (!policies || policies.length === 0) {
+        container.innerHTML = '<p class="neg-class-empty">No policies in this category</p>';
+        return;
+    }
+    
+    container.innerHTML = policies.map(policy => `
+        <div class="neg-class-policy">
+            <div class="neg-class-policy-name">${policy.productName}</div>
+            <div class="neg-class-policy-insurer">${policy.insurerName}</div>
+            <div class="neg-class-policy-stats">
+                <span class="neg-class-policy-stat rating"><i class="fas fa-star"></i> ${policy.rating}</span>
+                <span class="neg-class-policy-stat"><i class="fas fa-check"></i> ${policy.claimRatio}%</span>
+            </div>
+            <div class="neg-class-policy-premium">${policy.premiumRange}</div>
+        </div>
+    `).join('');
+}
+
+function renderPolicyList(container, policies) {
+    if (!policies || policies.length === 0) {
+        container.innerHTML = '<p class="neg-class-empty">No policies available</p>';
+        return;
+    }
+    
+    container.innerHTML = policies.map(policy => `
+        <div class="neg-policy-item">
+            <div class="neg-policy-item-header">
+                <div class="neg-policy-item-name">${policy.productName}</div>
+                <span class="neg-policy-item-type">${policy.type}</span>
+            </div>
+            <div class="neg-policy-item-insurer">${policy.insurerName}</div>
+            <div class="neg-policy-item-features">
+                ${policy.keyFeatures.slice(0, 3).map(f => `<span class="neg-policy-item-feature">${f}</span>`).join('')}
+            </div>
+            <div class="neg-policy-item-footer">
+                <span class="neg-policy-item-premium">${policy.premiumRange}</span>
+                <span class="neg-policy-item-rating"><i class="fas fa-star"></i> ${policy.rating}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Load all policies on page load
+document.addEventListener('DOMContentLoaded', () => {
+    // Small delay to ensure DOM is ready
+    setTimeout(() => {
+        loadPolicies('all');
+    }, 500);
+});
