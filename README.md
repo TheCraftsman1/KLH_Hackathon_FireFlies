@@ -1,8 +1,8 @@
-# 🛡️ Insurix.India — AI-Powered Smart Insurance Platform
-
 <div align="center">
 
-![Insurix.India Homepage](docs/ui-homepage.png)
+![Insurix.India](docs/logo.png)
+
+# AI-Powered Smart Insurance Platform
 
 **Smart Insurance for Every Indian Family**
 
@@ -38,50 +38,19 @@ This approach demonstrates how **AI, automation, and conversational interfaces**
 
 ## 🏗️ System Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          FRONTEND (HTML/CSS/JS)                     │
-│                                                                     │
-│  ┌──────────┐  ┌──────────────┐  ┌──────────┐  ┌────────────────┐  │
-│  │ Homepage │  │ Voice Assist │  │ AI Tools │  │  Negotiation   │  │
-│  │index.html│  │voice-asst.html│ │ai-tools  │  │ negotiation    │  │
-│  └────┬─────┘  └──────┬───────┘  └────┬─────┘  └──────┬─────────┘  │
-│       │               │               │               │             │
-└───────┼───────────────┼───────────────┼───────────────┼─────────────┘
-        │               │               │               │
-        ▼               ▼               ▼               ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      BACKEND (Node.js + Express)                    │
-│                           server.js                                 │
-│                                                                     │
-│  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────────┐   │
-│  │  /api/chat  │  │/api/vehicle  │  │  /api/negotiate          │   │
-│  │  AI Chatbot │  │  RTO Lookup  │  │  Multi-round bargaining  │   │
-│  └──────┬──────┘  └──────┬───────┘  └───────────┬──────────────┘   │
-│         │                │                      │                   │
-│  ┌──────┴──────┐  ┌──────┴───────┐  ┌───────────┴──────────────┐   │
-│  │/api/decode  │  │/api/quotes   │  │  /api/azure-tts          │   │
-│  │Policy Parse │  │  6 Insurers  │  │  Text-to-Speech          │   │
-│  └──────┬──────┘  └──────────────┘  └───────────┬──────────────┘   │
-│         │                                       │                   │
-└─────────┼───────────────────────────────────────┼───────────────────┘
-          │                                       │
-          ▼                                       ▼
-┌──────────────────┐                   ┌──────────────────────┐
-│  OpenRouter API  │                   │  Azure Speech API    │
-│  (Gemini Flash)  │                   │  (TTS: EN/TE/HI)    │
-│  AI Responses    │                   │  Voice Output        │
-└──────────────────┘                   └──────────────────────┘
-```
+![System Architecture](docs/architecture-full.jpg)
 
-### Database Layer
+The architecture consists of 6 layers:
 
-![Database Architecture](docs/architecture-db.png)
-
-| Component | Description |
-|-----------|-------------|
-| **User Policy Inputs** | Vehicle number, policy type, user age, claim history entered via form or voice |
-| **Mock Insurance Dataset** | Simulated quotes from ICICI Lombard, HDFC ERGO, Bajaj Allianz, Tata AIG, Digit, Acko |
+| Layer | Components | Description |
+|-------|-----------|-------------|
+| 👤 **User** | Customer | Interacts via browser (text, voice, or file upload) |
+| 🖥️ **Frontend** | HTML Pages, JavaScript, UI, Chatbot Interface, Voice Input (Web Speech API) | Responsive UI with dark/light themes |
+| ⚙️ **Backend** | Routing Controller, Express Application, Data Processing | Routes API calls, processes requests, serves static files |
+| 🧠 **AI Engine** | Risk Score Predictor, Premium Estimation Logic, Recommendation Engine | Evaluates policies, compares premiums, generates recommendations |
+| 🗄️ **Database** | User Policy Inputs, Mock Insurance Dataset | Stores user data and simulated insurer quotes |
+| 🔌 **External Services** | LLM APIs (Gemini Flash), Insurance Company APIs | OpenRouter for AI chat, Azure for TTS |
+| 🗣️ **NLP Module** | Speech-to-Text Processor, Chatbot Response Engine | Voice recognition + multilingual chatbot (EN/TE/HI) |
 
 ---
 
