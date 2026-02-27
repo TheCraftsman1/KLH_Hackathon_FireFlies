@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Hover Cards</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 2.5rem;
+            margin-bottom: 50px;
+            text-align: center;
+            font-weight: 600;
+            letter-spacing: 2px;
+            text-shadow: 0 4px 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .card {
+            position: relative;
+            height: 320px;
+            border-radius: 20px;
+            overflow: hidden;
+            cursor: pointer;
+            background: linear-gradient(145deg, #1e3a5f, #0d2137);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        box-shadow 0.4s ease;
+            --rotateX: 0deg;
+            --rotateY: 0deg;
+        }
+
+        .card:hover {
+            transform: perspective(1000px) translateY(-10px) scale(1.02) rotateX(var(--rotateX)) rotateY(var(--rotateY));
+            box-shadow: 0 25px 60px rgba(0, 212, 255, 0.2),
+                        0 0 30px rgba(0, 212, 255, 0.1);
+        }
+
+        /* Card Background Pattern */
+        .card-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.15;
+            transition: opacity 0.4s ease;
+        }
+
+        .card:hover .card-bg {
+            opacity: 0.25;
+        }
+
+        .card:nth-child(1) .card-bg {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        }
+
+        .card:nth-child(2) .card-bg {
+            background: linear-gradient(45deg, #00d2d3, #01a3a4);
+        }
+
+        .card:nth-child(3) .card-bg {
+            background: linear-gradient(45deg, #a55eea, #8854d0);
+        }
+
+        .card:nth-child(4) .card-bg {
+            background: linear-gradient(45deg, #fed330, #f79f1f);
+        }
+
+        /* Card Icon */
+        .card-icon {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        background 0.3s ease;
+        }
+
+        .card:nth-child(1) .card-icon { background: linear-gradient(145deg, #ff6b6b, #ee5a24); }
+        .card:nth-child(2) .card-icon { background: linear-gradient(145deg, #00d2d3, #01a3a4); }
+        .card:nth-child(3) .card-icon { background: linear-gradient(145deg, #a55eea, #8854d0); }
+        .card:nth-child(4) .card-icon { background: linear-gradient(145deg, #fed330, #f79f1f); }
+
+        .card:hover .card-icon {
+            transform: translateX(-50%) scale(1.1) rotate(360deg);
+        }
+
+        /* Card Content */
+        .card-content {
+            position: absolute;
+            top: 130px;
+            left: 0;
+            right: 0;
+            padding: 0 25px;
+            text-align: center;
+            transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card-title {
+            color: #fff;
+            font-size: 1.4rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            transition: color 0.3s ease;
+        }
+
+        .card:nth-child(1) .card-title { color: #ff6b6b; }
+        .card:nth-child(2) .card-title { color: #00d2d3; }
+        .card:nth-child(3) .card-title { color: #a55eea; }
+        .card:nth-child(4) .card-title { color: #fed330; }
+
+        .card-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Hidden Content - Revealed on Hover */
+        .card-hidden {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 25px;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), transparent);
+            transform: translateY(100%);
+            opacity: 0;
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        opacity 0.4s ease;
+        }
+
+        .card:hover .card-hidden {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .card:hover .card-content {
+            top: 110px;
+        }
+
+        .card-stats {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 15px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            color: #fff;
+            font-size: 1.5rem;
+            font-weight: 700;
+            display: block;
+        }
+
+        .card-stats .stat:nth-child(1) .stat-value { color: #00d2d3; }
+        .card-stats .stat:nth-child(2) .stat-value { color: #fed330; }
+        .card-stats .stat:nth-child(3) .stat-value { color: #a55eea; }
+
+        .stat-label {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card-button {
+            display: inline-block;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: none;
+            color: #fff;
+        }
+
+        .card:nth-child(1) .card-button { background: linear-gradient(145deg, #ff6b6b, #ee5a24); }
+        .card:nth-child(2) .card-button { background: linear-gradient(145deg, #00d2d3, #01a3a4); }
+        .card:nth-child(3) .card-button { background: linear-gradient(145deg, #a55eea, #8854d0); }
+        .card:nth-child(4) .card-button { background: linear-gradient(145deg, #fed330, #f79f1f); }
+
+        .card-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Dynamic Content Animation */
+        .dynamic-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .dynamic-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.85rem;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            transform: translateX(-20px);
+            opacity: 0;
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+
+        .card:hover .dynamic-item {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .card:hover .dynamic-item:nth-child(1) { transition-delay: 0.1s; }
+        .card:hover .dynamic-item:nth-child(2) { transition-delay: 0.2s; }
+        .card:hover .dynamic-item:nth-child(3) { transition-delay: 0.3s; }
+
+        .dynamic-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+        }
+
+        /* Floating particles effect */
+        .particle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .card:hover .particle {
+            animation: float 2s ease-in-out infinite;
+        }
+
+        .card:nth-child(1) .particle { background: #ff6b6b; }
+        .card:nth-child(2) .particle { background: #00d2d3; }
+        .card:nth-child(3) .particle { background: #a55eea; }
+        .card:nth-child(4) .particle { background: #fed330; }
+
+        .particle:nth-child(1) { top: 20%; left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { top: 30%; right: 15%; animation-delay: 0.5s; }
+        .particle:nth-child(3) { bottom: 20%; left: 20%; animation-delay: 1s; }
+        .particle:nth-child(4) { bottom: 30%; right: 10%; animation-delay: 1.5s; }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-15px) scale(1.2); opacity: 0.4; }
+        }
+
+        @keyframes pulse {
+            0% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.15); }
+            100% { transform: translateX(-50%) scale(1); }
+        }
+
+        /* Glow effect on hover */
+        .glow {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+
+        .card:hover .glow {
+            opacity: 1;
+            animation: rotate 4s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Progress bar animation */
+        .progress-container {
+            margin-top: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.75rem;
+            margin-bottom: 5px;
+        }
+
+        .progress-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            width: 0;
+            border-radius: 3px;
+            transition: width 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card:nth-child(1) .progress-fill { background: linear-gradient(90deg, #ff6b6b, #ee5a24); }
+        .card:nth-child(2) .progress-fill { background: linear-gradient(90deg, #00d2d3, #01a3a4); }
+        .card:nth-child(3) .progress-fill { background: linear-gradient(90deg, #a55eea, #8854d0); }
+        .card:nth-child(4) .progress-fill { background: linear-gradient(90deg, #fed330, #f79f1f); }
+
+        .card:hover .progress-fill {
+            width: var(--progress);
+        }
+
+        /* Reduced motion support for accessibility */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>✨ Dynamic Hover Cards</h1>
+    
+    <div class="cards-container">
+        <!-- Card 1 -->
+        <div class="card" tabindex="0" role="button" aria-label="Analytics card">
+            <div class="card-bg"></div>
+            <div class="glow"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            
+            <div class="card-icon">🚀</div>
+            
+            <div class="card-content">
+                <h3 class="card-title">Analytics</h3>
+                <p class="card-description">Real-time data visualization and insights</p>
+            </div>
+            
+            <div class="card-hidden">
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" data-suffix="%">85</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" data-suffix="K">2.4</span>
+                        <span class="stat-label">Users</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" data-suffix="%">98</span>
+                        <span class="stat-label">Uptime</span>
+                    </div>
+                </div>
+                
+                <div class="dynamic-content">
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">📊</span>
+                        <span>Live Dashboard Updates</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">⚡</span>
+                        <span>Instant Data Sync</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🔒</span>
+                        <span>Secure Encryption</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Performance</span>
+                        <span>85%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="--progress: 85%"></div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="card-button">Explore</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card 2 -->
+        <div class="card" tabindex="0" role="button" aria-label="Premium card">
+            <div class="card-bg"></div>
+            <div class="glow"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            
+            <div class="card-icon">💎</div>
+            
+            <div class="card-content">
+                <h3 class="card-title">Premium</h3>
+                <p class="card-description">Exclusive features and unlimited access</p>
+            </div>
+            
+            <div class="card-hidden">
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value" data-prefix="$">99</span>
+                        <span class="stat-label">Value</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value" data-suffix="+">50</span>
+                        <span class="stat-label">Features</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">24/7</span>
+                        <span class="stat-label">Support</span>
+                    </div>
+                </div>
+                
+                <div class="dynamic-content">
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🎁</span>
+                        <span>Free Trial - 30 Days</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🌟</span>
+                        <span>Priority Processing</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🎯</span>
+                        <span>Custom Solutions</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Completion</span>
+                        <span>72%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="--progress: 72%"></div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="card-button">Upgrade</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card 3 -->
+        <div class="card" tabindex="0" role="button" aria-label="Network card">
+            <div class="card-bg"></div>
+            <div class="glow"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            
+            <div class="card-icon">🌐</div>
+            
+            <div class="card-content">
+                <h3 class="card-title">Network</h3>
+                <p class="card-description">Global connectivity and infrastructure</p>
+            </div>
+            
+            <div class="card-hidden">
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">150+</span>
+                        <span class="stat-label">Countries</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">1M+</span>
+                        <span class="stat-label">Nodes</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">0.1ms</span>
+                        <span class="stat-label">Latency</span>
+                    </div>
+                </div>
+                
+                <div class="dynamic-content">
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🌍</span>
+                        <span>Worldwide Coverage</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">📡</span>
+                        <span>High-Speed Connection</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🔗</span>
+                        <span>Seamless Integration</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Coverage</span>
+                        <span>94%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="--progress: 94%"></div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="card-button">Connect</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Card 4 -->
+        <div class="card" tabindex="0" role="button" aria-label="Intelligence card">
+            <div class="card-bg"></div>
+            <div class="glow"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            <div class="particle"></div>
+            
+            <div class="card-icon">🔮</div>
+            
+            <div class="card-content">
+                <h3 class="card-title">Intelligence</h3>
+                <p class="card-description">AI-powered predictions and insights</p>
+            </div>
+            
+            <div class="card-hidden">
+                <div class="card-stats">
+                    <div class="stat">
+                        <span class="stat-value">10B+</span>
+                        <span class="stat-label">Data Points</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">99.9%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-value">500+</span>
+                        <span class="stat-label">Models</span>
+                    </div>
+                </div>
+                
+                <div class="dynamic-content">
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🤖</span>
+                        <span>Machine Learning</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">🧠</span>
+                        <span>Neural Networks</span>
+                    </div>
+                    <div class="dynamic-item">
+                        <span class="dynamic-icon">📈</span>
+                        <span>Predictive Analytics</span>
+                    </div>
+                </div>
+                
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>Learning</span>
+                        <span>67%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="--progress: 67%"></div>
+                    </div>
+                </div>
+                
+                <div style="text-align: center; margin-top: 15px;">
+                    <button class="card-button">Discover</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add dynamic content generation on hover
+        const cards = document.querySelectorAll('.card');
+        
+        cards.forEach((card, index) => {
+            card.addEventListener('mouseenter', () => {
+                // Add ripple effect on icon
+                const icon = card.querySelector('.card-icon');
+                icon.style.animation = 'pulse 0.5s ease';
+                setTimeout(() => {
+                    icon.style.animation = '';
+                }, 500);
+            });
+        });
+
+        // Add counter animation for stats
+        function animateValue(element, start, end, duration) {
+            let startTimestamp = null;
+            const prefix = element.dataset.prefix || '';
+            const suffix = element.dataset.suffix || '';
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                const value = Math.floor(progress * (end - start) + start);
+                element.textContent = prefix + value + suffix;
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+        // Add parallax effect on mouse move
+        cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = (y - centerY) / 20;
+                const rotateY = (centerX - x) / 20;
+                
+                // Combine with existing hover transform using custom properties
+                card.style.setProperty('--rotateX', `${rotateX}deg`);
+                card.style.setProperty('--rotateY', `${rotateY}deg`);
+            });
+            
+            card.addEventListener('mouseleave', () => {
+                card.style.setProperty('--rotateX', '0deg');
+                card.style.setProperty('--rotateY', '0deg');
+            });
+        });
+    </script>
+</body>
+</html>
