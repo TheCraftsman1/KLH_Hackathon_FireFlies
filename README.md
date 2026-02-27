@@ -2,7 +2,7 @@
 
 ![Insurix.India](docs/logo.png)
 
-# AI-Powered Smart Insurance Platform
+# Auto Renewal Negotiation  Agent
 
 **Smart Insurance for Every Indian Family**
 
