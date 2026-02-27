@@ -5,7 +5,16 @@ const path = require('path');
 const multer = require('multer');
 const pdfParse = require('pdf-parse');
 const mammoth = require('mammoth');
-require('dotenv').config();
+const fs = require('fs');
+// Load .env, fallback to .env.example for hackathon evaluators
+if (fs.existsSync(path.join(__dirname, '.env'))) {
+    require('dotenv').config();
+} else if (fs.existsSync(path.join(__dirname, '.env.example'))) {
+    require('dotenv').config({ path: path.join(__dirname, '.env.example') });
+    console.log('⚠️  Using .env.example — copy to .env for production use');
+} else {
+    require('dotenv').config();
+}
 
 // Multer config — memory storage, 10MB limit
 const upload = multer({
@@ -1357,10 +1366,10 @@ const INDIAN_INSURANCE_POLICIES = {
 // AI Classification endpoint
 app.post('/api/policies/classify', async (req, res) => {
     const { vehicleType, userPreferences, budget, coverage } = req.body;
-    
+
     // Get policies based on vehicle type or all if not specified
     let policiesToClassify = [];
-    
+
     if (vehicleType) {
         // Map vehicle type to insurance category
         const categoryMap = {
@@ -1382,13 +1391,13 @@ app.post('/api/policies/classify', async (req, res) => {
             policiesToClassify.push(...cat.policies);
         }
     }
-    
+
     // Use AI to classify and rank policies based on user preferences
     let aiClassification = '';
     try {
         const prefText = userPreferences ? `User preferences: ${JSON.stringify(userPreferences)}. Budget: ${budget || 'not specified'}. Coverage: ${coverage || 'standard'}` : 'General ranking';
         const policiesText = policiesToClassify.map(p => `${p.insurerName} - ${p.productName}: Premium ${p.premiumRange}, Rating ${p.rating}, Claim Ratio ${p.claimRatio}%, Features: ${p.keyFeatures.join(', ')}`).join('; ');
-        
+
         const aiRes = await axios.post(
             'https://openrouter.ai/api/v1/chat/completions',
             {
@@ -1421,7 +1430,7 @@ app.post('/api/policies/classify', async (req, res) => {
         // Fallback classification
         aiClassification = 'Based on our analysis, we recommend policies with high claim settlement ratios and features matching your requirements. Contact our AI assistant for personalized recommendations.';
     }
-    
+
     // Classify policies into categories
     const classified = {
         bestValue: policiesToClassify.filter(p => p.rating >= 4.3 && parseInt(p.premiumRange.replace(/[₹,]/g, '').split('-')[0]) < 10000).slice(0, 3),
@@ -1429,7 +1438,7 @@ app.post('/api/policies/classify', async (req, res) => {
         bestClaims: policiesToClassify.filter(p => p.claimRatio >= 98).slice(0, 3),
         topRated: [...policiesToClassify].sort((a, b) => b.rating - a.rating).slice(0, 3)
     };
-    
+
     res.json({
         success: true,
         policies: policiesToClassify,
@@ -1449,13 +1458,13 @@ app.post('/api/policies/classify', async (req, res) => {
 // Get all Indian insurance policies
 app.get('/api/policies/india', (req, res) => {
     const { category, insurer } = req.query;
-    
+
     let result = INDIAN_INSURANCE_POLICIES;
-    
+
     if (category && result[category]) {
         result = { [category]: result[category] };
     }
-    
+
     if (insurer) {
         // Filter by insurer across all categories
         const filtered = {};
@@ -1467,7 +1476,7 @@ app.get('/api/policies/india', (req, res) => {
         }
         result = filtered;
     }
-    
+
     res.json({
         success: true,
         data: result,
