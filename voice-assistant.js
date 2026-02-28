@@ -1050,9 +1050,9 @@
             });
             var data = await resp.json();
             removeTypingIndicator();
+            var formatted = formatVehicleNumber(vehicleNum);
             if (data.success) {
                 var v = data.data;
-                var formatted = formatVehicleNumber(vehicleNum);
                 var reply = langData[currentLang].found
                     .replace('{num}', formatted)
                     .replace('{owner}', v.ownerName || 'N/A')
@@ -1458,7 +1458,7 @@
             });
             vehicleNumberInput.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
-                    var val = this.value.trim();
+                    var val = this.value.trim().replace(/\s/g, '').toUpperCase();
                     if (val.length >= 6) {
                         lastDetectedVehicle = val;
                         showToast('Looking up: ' + formatVehicleNumber(val), 'info');
@@ -1471,7 +1471,7 @@
         }
         if (vehicleLookupBtn) {
             vehicleLookupBtn.addEventListener('click', function () {
-                var val = vehicleNumberInput ? vehicleNumberInput.value.trim() : '';
+                var val = vehicleNumberInput ? vehicleNumberInput.value.trim().replace(/\s/g, '').toUpperCase() : '';
                 if (val.length >= 6) {
                     lastDetectedVehicle = val;
                     showToast('Looking up: ' + formatVehicleNumber(val), 'info');

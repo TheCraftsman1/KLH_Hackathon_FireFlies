@@ -2843,3 +2843,448 @@ button {
     opacity: 1;
     transform: translateY(0);
 }
+
+/* ===== POLICY REMINDERS SECTION ===== */
+.policy-reminders-section {
+    padding: 60px 0;
+    background: linear-gradient(135deg, #F8FAFC 0%, #EEF2FF 100%);
+}
+
+.pr-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.pr-header-left {
+    flex: 1;
+}
+
+.pr-bell-icon {
+    color: var(--pb-blue);
+    margin-right: 8px;
+}
+
+.pr-subtitle {
+    color: var(--pb-gray-500);
+    font-size: 15px;
+    margin-top: 8px;
+}
+
+.pr-header-right {
+    display: flex;
+    align-items: center;
+}
+
+.pr-notification-bell {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    background: var(--pb-white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition);
+}
+
+.pr-notification-bell:hover {
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.pr-notification-bell i {
+    font-size: 20px;
+    color: var(--pb-blue);
+}
+
+.pr-bell-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: var(--pb-red);
+    color: var(--pb-white);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    min-width: 20px;
+    text-align: center;
+    border: 2px solid var(--pb-white);
+}
+
+/* Grid Layout */
+.pr-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+}
+
+/* Policy Cards */
+.pr-card {
+    background: var(--pb-white);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    position: relative;
+    transition: var(--transition);
+    display: flex;
+    flex-direction: column;
+}
+
+.pr-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-xl);
+}
+
+.pr-card-urgency-bar {
+    height: 4px;
+    width: 100%;
+}
+
+.pr-urgency-critical .pr-card-urgency-bar {
+    background: linear-gradient(90deg, #EF4444, #F87171);
+}
+
+.pr-urgency-warning .pr-card-urgency-bar {
+    background: linear-gradient(90deg, #F59E0B, #FBBF24);
+}
+
+.pr-urgency-safe .pr-card-urgency-bar {
+    background: linear-gradient(90deg, #0D9488, #14B8A6);
+}
+
+.pr-urgency-expired .pr-card-urgency-bar {
+    background: linear-gradient(90deg, #6B7280, #9CA3AF);
+}
+
+.pr-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 20px 12px;
+}
+
+.pr-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.pr-urgency-critical .pr-card-icon {
+    background: linear-gradient(135deg, #FEE2E2, #FECACA);
+    color: #EF4444;
+}
+
+.pr-urgency-warning .pr-card-icon {
+    background: linear-gradient(135deg, #FEF3C7, #FDE68A);
+    color: #F59E0B;
+}
+
+.pr-urgency-safe .pr-card-icon {
+    background: linear-gradient(135deg, #CCFBF1, #99F6E4);
+    color: #0D9488;
+}
+
+.pr-urgency-expired .pr-card-icon {
+    background: linear-gradient(135deg, #F3F4F6, #E5E7EB);
+    color: #6B7280;
+}
+
+.pr-card-badge {
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.urgency-critical {
+    background: #FEE2E2;
+    color: #EF4444;
+}
+
+.urgency-warning {
+    background: #FEF3C7;
+    color: #B45309;
+}
+
+.urgency-safe {
+    background: #CCFBF1;
+    color: #0F766E;
+}
+
+.urgency-expired {
+    background: #F3F4F6;
+    color: #6B7280;
+}
+
+.pr-card-type {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pb-gray-900);
+    padding: 0 20px;
+    margin-bottom: 4px;
+}
+
+.pr-card-insurer {
+    font-size: 14px;
+    color: var(--pb-gray-500);
+    padding: 0 20px;
+    margin-bottom: 16px;
+}
+
+.pr-card-details {
+    padding: 0 20px;
+    display: grid;
+    gap: 10px;
+}
+
+.pr-detail {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--pb-gray-100);
+}
+
+.pr-label {
+    color: var(--pb-gray-500);
+    font-weight: 500;
+}
+
+.pr-value {
+    color: var(--pb-gray-900);
+    font-weight: 600;
+}
+
+.pr-expiry-date {
+    color: var(--pb-blue);
+    font-weight: 700;
+}
+
+/* Countdown Timer */
+.pr-countdown-wrap {
+    padding: 20px;
+    margin-top: auto;
+}
+
+.pr-countdown {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    background: var(--pb-gray-50);
+    padding: 12px;
+    border-radius: 10px;
+}
+
+.pr-count-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 36px;
+}
+
+.pr-count-num {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--pb-gray-900);
+    line-height: 1;
+}
+
+.pr-count-label {
+    font-size: 10px;
+    color: var(--pb-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 2px;
+}
+
+.pr-count-sep {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--pb-gray-400);
+    line-height: 1.4;
+}
+
+.pr-expired-label {
+    background: #FEF2F2;
+    color: #B91C1C;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: center;
+}
+
+/* Action Buttons */
+.pr-renew-btn {
+    display: block;
+    width: calc(100% - 40px);
+    margin: 0 20px 20px;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #6366F1, #4F46E5);
+    color: var(--pb-white);
+    text-align: center;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 14px;
+    transition: var(--transition);
+}
+
+.pr-renew-btn:hover {
+    background: linear-gradient(135deg, #4F46E5, #4338CA);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+}
+
+.pr-btn-safe {
+    background: linear-gradient(135deg, #0D9488, #0F766E);
+}
+
+.pr-btn-safe:hover {
+    background: linear-gradient(135deg, #0F766E, #115E59);
+    box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+}
+
+.pr-btn-expired {
+    background: linear-gradient(135deg, #6B7280, #4B5563);
+}
+
+.pr-btn-expired:hover {
+    background: linear-gradient(135deg, #4B5563, #374151);
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+/* Add Policy Card */
+.pr-add-card {
+    border: 2px dashed var(--pb-gray-300);
+    background: transparent;
+    box-shadow: none;
+    min-height: 350px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.pr-add-card:hover {
+    border-color: var(--pb-blue);
+    background: rgba(99, 102, 241, 0.05);
+}
+
+.pr-add-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--pb-gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: var(--pb-gray-400);
+    transition: var(--transition);
+}
+
+.pr-add-card:hover .pr-add-icon {
+    background: var(--pb-blue);
+    color: var(--pb-white);
+}
+
+/* Toast Notification */
+.pr-toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    background: var(--pb-white);
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    z-index: 9999;
+    transform: translateX(calc(100% + 24px));
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    max-width: 380px;
+}
+
+.pr-toast.active {
+    transform: translateX(0);
+}
+
+.pr-toast-icon {
+    width: 40px;
+    height: 40px;
+    background: #FEE2E2;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    color: #EF4444;
+    flex-shrink: 0;
+}
+
+.pr-toast-content {
+    flex: 1;
+}
+
+.pr-toast-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--pb-gray-900);
+    margin-bottom: 2px;
+}
+
+.pr-toast-message {
+    font-size: 12px;
+    color: var(--pb-gray-600);
+    line-height: 1.4;
+}
+
+.pr-toast-close {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: var(--pb-gray-100);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    color: var(--pb-gray-500);
+    transition: var(--transition);
+}
+
+.pr-toast-close:hover {
+    background: var(--pb-gray-200);
+    color: var(--pb-gray-700);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .pr-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .pr-header {
+        flex-direction: column;
+    }
+
+    .pr-toast {
+        left: 16px;
+        right: 16px;
+        max-width: none;
+    }
+}

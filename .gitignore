@@ -27,4 +27,10 @@ Thumbs.db
 
 # Node.js
 node_modules/
-package-lock.json
+
+# Environment variables
+.env
+
+# Screenshots
+screenshots/
+
